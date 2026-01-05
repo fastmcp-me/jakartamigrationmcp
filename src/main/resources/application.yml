@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: spring-react-template
+  
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/template
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Schema managed by Liquibase
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  
+  # Liquibase Configuration
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+    drop-first: false
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Application Configuration
+# This is a template - replace with your own application configuration
+app:
+  example:
+    task:
+      interval-ms: 300000  # 5 minutes
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    adrianmikula.projectname: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
