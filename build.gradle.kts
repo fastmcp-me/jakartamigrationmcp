@@ -99,6 +99,10 @@ dependencies {
     implementation("org.openrewrite:rewrite-maven:${property("openrewriteVersion")}")
     implementation("org.openrewrite.recipe:rewrite-migrate-java:${property("rewriteMigrateJavaVersion")}")
     implementation("org.openrewrite.recipe:rewrite-spring:${property("rewriteSpringVersion")}")
+    
+    // ASM for bytecode analysis
+    implementation("org.ow2.asm:asm:9.6")
+    implementation("org.ow2.asm:asm-commons:9.6")
 }
 
 dependencyManagement {

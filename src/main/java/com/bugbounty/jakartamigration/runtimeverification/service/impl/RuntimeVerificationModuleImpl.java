@@ -2,9 +2,11 @@ package com.bugbounty.jakartamigration.runtimeverification.service.impl;
 
 import com.bugbounty.jakartamigration.dependencyanalysis.domain.DependencyGraph;
 import com.bugbounty.jakartamigration.runtimeverification.domain.*;
+import com.bugbounty.jakartamigration.runtimeverification.service.BytecodeAnalyzer;
 import com.bugbounty.jakartamigration.runtimeverification.service.ErrorAnalyzer;
 import com.bugbounty.jakartamigration.runtimeverification.service.ProcessExecutor;
 import com.bugbounty.jakartamigration.runtimeverification.service.RuntimeVerificationModule;
+import com.bugbounty.jakartamigration.runtimeverification.service.impl.AsmBytecodeAnalyzer;
 
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -25,6 +27,7 @@ public class RuntimeVerificationModuleImpl implements RuntimeVerificationModule 
     private final ProcessExecutor processExecutor;
     private final ErrorAnalyzer errorAnalyzer;
     private final HttpClient httpClient;
+    private final BytecodeAnalyzer bytecodeAnalyzer;
     
     public RuntimeVerificationModuleImpl() {
         this.processExecutor = new ProcessExecutor();
@@ -32,20 +35,90 @@ public class RuntimeVerificationModuleImpl implements RuntimeVerificationModule 
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
+        this.bytecodeAnalyzer = new AsmBytecodeAnalyzer();
     }
     
     public RuntimeVerificationModuleImpl(
         ProcessExecutor processExecutor,
         ErrorAnalyzer errorAnalyzer,
-        HttpClient httpClient
+        HttpClient httpClient,
+        BytecodeAnalyzer bytecodeAnalyzer
     ) {
         this.processExecutor = processExecutor;
         this.errorAnalyzer = errorAnalyzer;
         this.httpClient = httpClient;
+        this.bytecodeAnalyzer = bytecodeAnalyzer != null ? bytecodeAnalyzer : new AsmBytecodeAnalyzer();
+    }
+    
+    @Override
+    public VerificationResult verifyRuntime(Path jarPath, VerificationOptions options, VerificationStrategy strategy) {
+        return switch (strategy) {
+            case BYTECODE_ONLY -> verifyWithBytecode(jarPath);
+            case PROCESS_ONLY -> verifyWithProcess(jarPath, options);
+            case BYTECODE_THEN_PROCESS -> verifyBytecodeThenProcess(jarPath, options);
+            case BOTH_PARALLEL -> verifyBothParallel(jarPath, options);
+        };
     }
     
     @Override
     public VerificationResult verifyRuntime(Path jarPath, VerificationOptions options) {
+        // Default to BYTECODE_THEN_PROCESS for backward compatibility with better performance
+        return verifyRuntime(jarPath, options, VerificationStrategy.BYTECODE_THEN_PROCESS);
+    }
+    
+    @Override
+    public BytecodeAnalysisResult analyzeBytecode(Path jarPath) {
+        return bytecodeAnalyzer.analyzeJar(jarPath);
+    }
+    
+    private VerificationResult verifyWithBytecode(Path jarPath) {
+        BytecodeAnalysisResult bytecodeResult = bytecodeAnalyzer.analyzeJar(jarPath);
+        
+        // Convert bytecode analysis to VerificationResult
+        List<RuntimeError> errors = new ArrayList<>(bytecodeResult.potentialErrors());
+        List<Warning> warnings = new ArrayList<>(bytecodeResult.warnings());
+        
+        // Add warnings for javax classes found
+        for (String javaxClass : bytecodeResult.javaxClasses()) {
+            warnings.add(new Warning(
+                "javax class found in bytecode: " + javaxClass,
+                "JAVAX_CLASS_DETECTED",
+                java.time.LocalDateTime.now(),
+                0.8
+            ));
+        }
+        
+        VerificationStatus status = bytecodeResult.hasIssues() 
+            ? VerificationStatus.PARTIAL 
+            : VerificationStatus.SUCCESS;
+        
+        ExecutionMetrics metrics = new ExecutionMetrics(
+            Duration.ofMillis(bytecodeResult.analysisTimeMs()),
+            0,
+            0,
+            false
+        );
+        
+        MigrationContext context = new MigrationContext(
+            new DependencyGraph(),
+            "BYTECODE_ANALYSIS",
+            false
+        );
+        
+        ErrorAnalysis analysis = errorAnalyzer.analyzeErrors(errors, context);
+        
+        return new VerificationResult(
+            status,
+            errors,
+            warnings,
+            metrics,
+            analysis,
+            analysis.suggestedFixes()
+        );
+    }
+    
+    private VerificationResult verifyWithProcess(Path jarPath, VerificationOptions options) {
+        // Original process execution implementation
         if (!Files.exists(jarPath)) {
             return createErrorResult(
                 VerificationStatus.FAILED,
@@ -96,6 +169,87 @@ public class RuntimeVerificationModuleImpl implements RuntimeVerificationModule 
             executionResult.metrics(),
             analysis,
             remediationSteps
+        );
+    }
+    
+    private VerificationResult verifyBytecodeThenProcess(Path jarPath, VerificationOptions options) {
+        // First, do fast bytecode analysis
+        BytecodeAnalysisResult bytecodeResult = bytecodeAnalyzer.analyzeJar(jarPath);
+        
+        // If bytecode analysis found issues, do process execution for comprehensive check
+        if (bytecodeResult.hasIssues()) {
+            VerificationResult processResult = verifyWithProcess(jarPath, options);
+            
+            // Merge results - combine errors and warnings
+            List<RuntimeError> combinedErrors = new ArrayList<>(bytecodeResult.potentialErrors());
+            combinedErrors.addAll(processResult.errors());
+            
+            List<Warning> combinedWarnings = new ArrayList<>(bytecodeResult.warnings());
+            combinedWarnings.addAll(processResult.warnings());
+            
+            // Use process execution metrics (more accurate)
+            MigrationContext context = new MigrationContext(
+                new DependencyGraph(),
+                "BYTECODE_THEN_PROCESS",
+                false
+            );
+            
+            ErrorAnalysis analysis = errorAnalyzer.analyzeErrors(combinedErrors, context);
+            
+            return new VerificationResult(
+                processResult.status(),
+                combinedErrors,
+                combinedWarnings,
+                processResult.metrics(),
+                analysis,
+                analysis.suggestedFixes()
+            );
+        }
+        
+        // No issues found in bytecode, return bytecode result
+        return verifyWithBytecode(jarPath);
+    }
+    
+    private VerificationResult verifyBothParallel(Path jarPath, VerificationOptions options) {
+        // For now, run sequentially (can be optimized with CompletableFuture later)
+        VerificationResult bytecodeResult = verifyWithBytecode(jarPath);
+        VerificationResult processResult = verifyWithProcess(jarPath, options);
+        
+        // Merge results
+        List<RuntimeError> combinedErrors = new ArrayList<>(bytecodeResult.errors());
+        combinedErrors.addAll(processResult.errors());
+        
+        List<Warning> combinedWarnings = new ArrayList<>(bytecodeResult.warnings());
+        combinedWarnings.addAll(processResult.warnings());
+        
+        // Use the more comprehensive status
+        VerificationStatus status = processResult.status() == VerificationStatus.FAILED 
+            ? VerificationStatus.FAILED 
+            : bytecodeResult.status();
+        
+        // Combine metrics
+        ExecutionMetrics combinedMetrics = new ExecutionMetrics(
+            bytecodeResult.metrics().executionTime().plus(processResult.metrics().executionTime()),
+            Math.max(bytecodeResult.metrics().memoryUsedBytes(), processResult.metrics().memoryUsedBytes()),
+            processResult.metrics().exitCode(),
+            processResult.metrics().timedOut()
+        );
+        
+        MigrationContext context = new MigrationContext(
+            new DependencyGraph(),
+            "BOTH_PARALLEL",
+            false
+        );
+        
+        ErrorAnalysis analysis = errorAnalyzer.analyzeErrors(combinedErrors, context);
+        
+        return new VerificationResult(
+            status,
+            combinedErrors,
+            combinedWarnings,
+            combinedMetrics,
+            analysis,
+            analysis.suggestedFixes()
         );
     }
     

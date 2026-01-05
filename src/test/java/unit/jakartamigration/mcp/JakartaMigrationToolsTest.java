@@ -204,8 +204,18 @@ class JakartaMigrationToolsTest {
     @DisplayName("Should create migration plan successfully")
     void shouldCreateMigrationPlanSuccessfully() throws Exception {
         // Given
+        com.bugbounty.jakartamigration.coderefactoring.domain.RefactoringPhase phase = 
+            new com.bugbounty.jakartamigration.coderefactoring.domain.RefactoringPhase(
+                1,
+                "Update build files",
+                List.of("pom.xml"),
+                List.of("UpdateMavenCoordinates"),
+                List.of(),
+                Duration.ofMinutes(5)
+            );
+        
         MigrationPlan mockPlan = new MigrationPlan(
-            List.of(),
+            List.of(phase),
             List.of("pom.xml", "src/main/java/Example.java"),
             Duration.ofMinutes(30),
             new RiskAssessment(0.3, List.of("Low risk"), List.of()),

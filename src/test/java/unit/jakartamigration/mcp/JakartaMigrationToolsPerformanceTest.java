@@ -169,9 +169,20 @@ class JakartaMigrationToolsPerformanceTest {
             .mapToObj(i -> "src/main/java/com/example/File" + i + ".java")
             .toList();
 
+        // Create at least one phase to satisfy MigrationPlan validation
+        com.bugbounty.jakartamigration.coderefactoring.domain.RefactoringPhase phase = 
+            new com.bugbounty.jakartamigration.coderefactoring.domain.RefactoringPhase(
+                1,
+                "Phase 1",
+                largeFileList.subList(0, Math.min(100, largeFileList.size())),
+                List.of("AddJakartaNamespace"),
+                List.of(),
+                Duration.ofMinutes(30)
+            );
+        
         com.bugbounty.jakartamigration.coderefactoring.domain.MigrationPlan largePlan = 
             new com.bugbounty.jakartamigration.coderefactoring.domain.MigrationPlan(
-                List.of(),
+                List.of(phase),
                 largeFileList,
                 Duration.ofHours(2),
                 new RiskAssessment(0.3, List.of(), List.of()),

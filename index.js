@@ -15,16 +15,28 @@ const https = require('https');
 const http = require('http');
 
 const PACKAGE_NAME = '@jakarta-migration/mcp-server';
-const JAR_NAME = 'bug-bounty-finder-1.0.0-SNAPSHOT.jar';
-const VERSION = process.env.JAKARTA_MCP_VERSION || '1.0.0';
+
+// Get version from environment or package.json
+let VERSION = process.env.JAKARTA_MCP_VERSION;
+if (!VERSION) {
+  try {
+    VERSION = require('./package.json').version || '1.0.0';
+  } catch (e) {
+    VERSION = '1.0.0';
+  }
+}
+
 const GITHUB_REPO = process.env.GITHUB_REPO || 'your-org/JakartaMigrationMCP';
+const JAR_NAME = `bug-bounty-finder-${VERSION}.jar`;
 const GITHUB_RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}`;
 
 // Determine OS-specific paths
 const isWindows = process.platform === 'win32';
 const homeDir = os.homedir();
 const cacheDir = path.join(homeDir, isWindows ? 'AppData' : '.cache', 'jakarta-migration-mcp');
-const jarPath = path.join(cacheDir, JAR_NAME);
+
+// Allow override of JAR path via environment variable
+const jarPath = process.env.JAKARTA_MCP_JAR_PATH || path.join(cacheDir, JAR_NAME);
 
 // Java executable detection
 function findJavaExecutable() {
@@ -114,7 +126,16 @@ async function main() {
         console.error(`ERROR: Failed to download JAR: ${error.message}`);
         console.error(`Please ensure the JAR is available at: ${GITHUB_RELEASES_URL}/${JAR_NAME}`);
         console.error('Or build it locally with: ./gradlew bootJar');
-        process.exit(1);
+        console.error('For local development, you can set JAKARTA_MCP_JAR_PATH to point to a local JAR file');
+        
+        // Check for local JAR path override
+        const localJarPath = process.env.JAKARTA_MCP_JAR_PATH;
+        if (localJarPath && fs.existsSync(localJarPath)) {
+          console.error(`Using local JAR: ${localJarPath}`);
+          jar = localJarPath;
+        } else {
+          process.exit(1);
+        }
       }
     }
 

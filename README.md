@@ -284,6 +284,40 @@ Add your own endpoints in the `web/controller` package following the existing pa
 ./gradlew bootJar
 ```
 
+## Packaging and Distribution
+
+This project is distributed as an npm package for easy installation with MCP clients.
+
+### Quick Install
+
+```bash
+# Install globally
+npm install -g @jakarta-migration/mcp-server
+
+# Or use with npx (no installation)
+npx -y @jakarta-migration/mcp-server
+```
+
+### Building for Release
+
+**Linux/macOS:**
+```bash
+./scripts/build-release.sh
+```
+
+**Windows:**
+```powershell
+.\scripts\build-release.ps1
+```
+
+This creates release artifacts in the `release/` directory.
+
+### Publishing
+
+See [Packaging Guide](docs/setup/PACKAGING.md) for detailed release instructions.
+
+For installation in MCP clients (Cursor, Claude Code, Antigravity), see [Installation Guide](docs/setup/INSTALLATION.md).
+
 ## Next Steps
 
 After cloning this template:

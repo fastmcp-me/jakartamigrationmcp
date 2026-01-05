@@ -52,6 +52,69 @@ class RuntimeVerificationModuleTest {
     }
     
     @Test
+    @DisplayName("Should verify using bytecode analysis strategy")
+    void shouldVerifyWithBytecodeStrategy() throws Exception {
+        // Given
+        Path jarPath = tempDir.resolve("test.jar");
+        Files.createFile(jarPath);
+        
+        VerificationOptions options = VerificationOptions.defaults();
+        
+        // When
+        VerificationResult result = module.verifyRuntime(
+            jarPath, 
+            options, 
+            VerificationStrategy.BYTECODE_ONLY
+        );
+        
+        // Then
+        assertNotNull(result);
+        assertNotNull(result.status());
+        // Bytecode analysis should be fast
+        assertTrue(result.metrics().executionTime().toMillis() < 5000);
+    }
+    
+    @Test
+    @DisplayName("Should verify using process execution strategy")
+    void shouldVerifyWithProcessStrategy() throws Exception {
+        // Given
+        Path jarPath = tempDir.resolve("test.jar");
+        Files.createFile(jarPath);
+        
+        VerificationOptions options = VerificationOptions.defaults();
+        
+        // When
+        VerificationResult result = module.verifyRuntime(
+            jarPath, 
+            options, 
+            VerificationStrategy.PROCESS_ONLY
+        );
+        
+        // Then
+        assertNotNull(result);
+        assertNotNull(result.status());
+    }
+    
+    @Test
+    @DisplayName("Should analyze bytecode directly")
+    void shouldAnalyzeBytecode() throws Exception {
+        // Given
+        Path jarPath = tempDir.resolve("test.jar");
+        Files.createFile(jarPath);
+        
+        // When
+        BytecodeAnalysisResult result = module.analyzeBytecode(jarPath);
+        
+        // Then
+        assertNotNull(result);
+        assertNotNull(result.javaxClasses());
+        assertNotNull(result.jakartaClasses());
+        assertNotNull(result.mixedNamespaceClasses());
+        assertTrue(result.analysisTimeMs() >= 0);
+        assertTrue(result.classesAnalyzed() >= 0);
+    }
+    
+    @Test
     @DisplayName("Should analyze errors for Jakarta migration issues")
     void shouldAnalyzeErrors() {
         // Given

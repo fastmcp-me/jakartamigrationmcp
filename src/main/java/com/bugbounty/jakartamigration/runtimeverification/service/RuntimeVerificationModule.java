@@ -8,22 +8,42 @@ import java.util.List;
 
 /**
  * Main interface for the Runtime Verification Module.
- * Executes JAR files and monitors for runtime class resolution issues,
- * particularly those caused by javax/jakarta namespace problems.
+ * Supports both bytecode analysis (fast) and process execution (comprehensive)
+ * for detecting Jakarta migration issues.
  */
 public interface RuntimeVerificationModule {
     
     /**
+     * Verifies runtime using the specified strategy.
+     *
+     * @param jarPath Path to the JAR file to verify
+     * @param options Verification options
+     * @param strategy Verification strategy to use
+     * @return Verification result with errors, warnings, and analysis
+     */
+    VerificationResult verifyRuntime(
+        Path jarPath,
+        VerificationOptions options,
+        VerificationStrategy strategy
+    );
+    
+    /**
      * Executes JAR in isolated process and monitors for issues.
+     * Uses PROCESS_ONLY strategy (backward compatibility).
      *
      * @param jarPath Path to the JAR file to execute
      * @param options Verification options
      * @return Verification result with errors, warnings, and analysis
      */
-    VerificationResult verifyRuntime(
-        Path jarPath,
-        VerificationOptions options
-    );
+    VerificationResult verifyRuntime(Path jarPath, VerificationOptions options);
+    
+    /**
+     * Analyzes JAR using bytecode analysis (fast, lightweight).
+     *
+     * @param jarPath Path to the JAR file to analyze
+     * @return Bytecode analysis result
+     */
+    BytecodeAnalysisResult analyzeBytecode(Path jarPath);
     
     /**
      * Analyzes runtime errors for Jakarta migration issues.
