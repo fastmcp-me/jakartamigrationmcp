@@ -1,357 +1,339 @@
-# Spring Boot Quick-Start Template
+# Jakarta Migration MCP Server
 
-A modern Spring Boot 3.x application template with best practices, comprehensive testing, and production-ready configuration.
+A Model Context Protocol (MCP) server that provides AI assistants with specialized tools for analyzing and migrating Java applications from Java EE 8 (`javax.*`) to Jakarta EE 9+ (`jakarta.*`). This tool helps automate the complex process of Jakarta migration by providing deep dependency analysis, blocker detection, version recommendations, and migration planning.
 
-**This is a quick-start template** - Use this as a foundation for your new Spring Boot projects. It includes a complete setup with testing infrastructure, code quality standards, and documentation to help you get started quickly.
+## What It Does
+
+The Jakarta Migration MCP Server enables AI coding assistants (Cursor, Claude Code, Antigravity) to:
+
+- **Analyze Jakarta Readiness** - Assess Java projects for migration readiness with detailed dependency analysis
+- **Detect Blockers** - Identify dependencies and code patterns that prevent Jakarta migration
+- **Recommend Versions** - Suggest Jakarta-compatible versions for existing dependencies
+- **Create Migration Plans** - Generate comprehensive, phased migration plans with risk assessment
+- **Verify Runtime** - Test migrated applications to ensure they run correctly after migration
+
+### The Problem It Solves
+
+Migrating from Java EE 8 (`javax.*`) to Jakarta EE 9+ (`jakarta.*`) is complex because:
+- **Dependency Hell**: Many libraries haven't migrated, creating transitive conflicts
+- **Binary Incompatibility**: Compiled JARs may reference `javax.*` internally
+- **Hidden Dependencies**: `javax.*` usage in XML configs, annotations, and dynamic loading
+- **Risk Assessment**: Need to understand migration impact before starting
+
+This MCP server provides AI assistants with the specialized knowledge and tools to navigate these challenges effectively.
 
 ## Features
 
-- **Modern Tech Stack**: Spring Boot 3.2+, Java 21, Gradle
-- **Reactive Programming**: Spring WebFlux with Project Reactor
-- **Database Support**: PostgreSQL with Liquibase migrations
-- **Caching & Queues**: Redis integration
-- **LLM Integration**: Optional Ollama integration via Spring AI
-- **Virtual Threads**: High concurrency with Project Loom (Java 21)
-- **Comprehensive Testing**: Unit tests, component tests with TestContainers
-- **Code Quality**: Pre-configured with code quality standards and best practices
-- **Docker Support**: Docker Compose for local development
-- **Git Operations**: JGit integration for repository operations
-- **Resilience Patterns**: Circuit breakers and rate limiting with Resilience4j
-- **TDD Approach**: Test-driven development with comprehensive test coverage
+### Core Capabilities
+
+- **Deep Dependency Analysis** - Analyzes Maven/Gradle projects to build complete dependency graphs
+- **Namespace Classification** - Identifies `javax.*` vs `jakarta.*` dependencies automatically
+- **Blocker Detection** - Finds dependencies with no Jakarta equivalents
+- **Version Recommendations** - Suggests Jakarta-compatible versions with migration paths
+- **Migration Planning** - Creates phased migration plans with risk assessment
+- **Runtime Verification** - Tests migrated applications to catch runtime issues
+- **OpenRewrite Integration** - Uses OpenRewrite for automated code refactoring
+
+### Premium Features (with License)
+
+- **Auto-Fixes** - Automatically fix detected issues without manual intervention
+- **One-Click Refactor** - Execute complete Jakarta migration with a single command
+- **Binary Fixes** - Fix issues in compiled binaries and JAR files
+- **Advanced Analysis** - Deep transitive conflict detection and resolution
+- **Batch Operations** - Process multiple projects simultaneously
+- **Custom Recipes** - Create and use custom migration recipes
+- **API Access** - Programmatic API for CI/CD integrations
+- **Export Reports** - Export detailed reports in PDF, HTML formats
 
 ## Tech Stack
 
-- **Spring Boot 3.2+** with Java 21
-- **Gradle** for build automation
-- **Spring AI** for LLM orchestration
-- **PostgreSQL** for state management
-- **Redis** for caching and queues
-- **JGit** for Git operations
-- **Ollama** for local LLM inference
-- **Resilience4j** for circuit breakers and rate limiting
-- **Docker Compose** for local development
+### Core Technologies
+
+- **Java 21** - Modern Java with virtual threads and pattern matching
+- **Spring Boot 3.2+** - Application framework with Spring AI MCP integration
+- **Spring AI 1.0.0** - MCP server framework and AI integration
+- **Gradle** - Build automation and dependency management
+- **OpenRewrite** - Automated code refactoring and migration recipes
+
+### Key Libraries
+
+- **JGit** - Git repository operations
+- **ASM** - Bytecode analysis for runtime verification
+- **Resilience4j** - Circuit breakers and rate limiting
+- **TestContainers** - Integration testing with Docker
+- **JaCoCo** - Code coverage reporting
+
+### Infrastructure
+
+- **PostgreSQL** - State management (optional, for advanced features)
+- **Redis** - Caching and queues (optional)
+- **Docker Compose** - Local development environment
+
+## Quick Start
+
+### Prerequisites
+
+- **Java 21+** - [Download from Adoptium](https://adoptium.net/)
+- **Node.js 18+** - [Download from nodejs.org](https://nodejs.org/)
+- **Docker & Docker Compose** - For local services (optional)
+
+### Using Mise (Recommended)
+
+[mise](https://mise.jdx.dev/) is a tool version manager that handles all dependencies automatically.
+
+**Install mise:**
+```bash
+# Windows (winget)
+winget install jdx.mise
+
+# Linux/Mac
+curl https://mise.run | sh
+
+# Mac (Homebrew)
+brew install mise
+```
+
+**Setup project:**
+```bash
+cd JakartaMigrationMCP
+mise install          # Installs Java 21, Gradle, Node.js
+mise run setup        # Runs setup script
+```
+
+**Common mise commands:**
+```bash
+mise tasks            # View all available commands
+mise run test         # Run all tests
+mise run test-unit    # Run unit tests only
+mise run build        # Build the project (without tests)
+mise run build-all    # Build with tests
+mise run run          # Run the application
+mise run coverage     # Generate code coverage report
+mise run clean        # Clean build artifacts
+mise run start-services # Start Docker services (PostgreSQL, Redis)
+```
+
+See [Mise Setup Guide](docs/setup/MISE_SETUP.md) for complete task reference.
+
+See [Mise Setup Guide](docs/setup/MISE_SETUP.md) for detailed instructions.
+
+### Manual Setup
+
+**1. Install Java 21+**
+```bash
+# Verify installation
+java -version
+```
+
+**2. Install Node.js 18+**
+```bash
+# Verify installation
+node --version
+npm --version
+```
+
+**3. Build the project**
+```bash
+./gradlew build
+```
+
+**4. Run the application**
+```bash
+./gradlew bootRun
+```
+
+## MCP Installation & Usage
+
+### Quick Install
+
+```bash
+# Install globally via npm
+npm install -g @jakarta-migration/mcp-server
+
+# Or use with npx (no installation needed)
+npx -y @jakarta-migration/mcp-server
+```
+
+### Configure in MCP Clients
+
+#### Cursor
+
+1. Open Cursor Settings (`Ctrl+,` or `Cmd+,`)
+2. Navigate to **Features** → **MCP**
+3. Click **"+ Add New MCP Server"**
+4. Add configuration:
+
+```json
+{
+  "mcpServers": {
+    "jakarta-migration": {
+      "command": "npx",
+      "args": ["-y", "@jakarta-migration/mcp-server"]
+    }
+  }
+}
+```
+
+5. **Restart Cursor** for changes to take effect
+
+#### Claude Code
+
+1. Open Claude Code Settings
+2. Navigate to **MCP** settings
+3. Add the same configuration as above
+4. Restart Claude Code
+
+#### Google Antigravity
+
+Add the configuration to your Antigravity MCP settings file (location may vary).
+
+### Usage Examples
+
+Once configured, you can use the MCP tools in your AI assistant:
+
+```
+Analyze the Jakarta readiness of my project at /path/to/project
+```
+
+```
+Detect any blockers for Jakarta migration in my project
+```
+
+```
+Create a migration plan for migrating to Jakarta EE
+```
+
+```
+Recommend Jakarta-compatible versions for my dependencies
+```
+
+```
+Verify the runtime of my migrated application
+```
+
+### Available MCP Tools
+
+- **`analyzeJakartaReadiness`** - Comprehensive project analysis
+- **`detectBlockers`** - Find migration blockers
+- **`recommendVersions`** - Get version recommendations
+- **`createMigrationPlan`** - Generate migration plan
+- **`verifyRuntime`** - Test migrated application
+
+See [MCP Tools Documentation](docs/mcp/MCP_TOOLS_IMPLEMENTATION.md) for detailed tool descriptions.
 
 ## Project Structure
 
 ```
 src/
-├── main/
-│   ├── java/com/yourproject/
-│   │   ├── domain/          # Domain models and services
-│   │   ├── entity/          # JPA entities
-│   │   ├── repository/      # Data access layer
-│   │   ├── service/         # Business logic
-│   │   ├── mapper/          # Domain-entity mapping
-│   │   ├── config/          # Configuration classes
-│   │   └── web/             # Controllers and web layer
-│   └── resources/
-│       └── application.yml
+├── main/java/adrianmikula/jakartamigration/
+│   ├── config/              # Configuration (feature flags, license validation)
+│   ├── mcp/                 # MCP tools implementation
+│   ├── dependencyanalysis/  # Dependency analysis module
+│   ├── coderefactoring/     # Code refactoring module
+│   └── runtimeverification/ # Runtime verification module
 └── test/
     ├── java/unit/           # Unit tests
-    └── java/component/      # Component tests (TestContainers)
+    ├── java/component/      # Component tests
+    └── java/e2e/            # End-to-end tests
 ```
 
 ## Documentation
 
+### Setup & Installation
+
+- **[Installation Guide](docs/setup/INSTALLATION.md)** - Complete installation instructions
+- **[Mise Setup](docs/setup/MISE_SETUP.md)** - Tool version management with mise
+- **[MCP Setup](docs/setup/MCP_SETUP.md)** - MCP server configuration
+- **[Feature Flags Setup](docs/setup/FEATURE_FLAGS_SETUP.md)** - License and feature configuration
+- **[Stripe License Setup](docs/setup/STRIPE_LICENSE_SETUP.md)** - Stripe subscription validation
+- **[Apify License Setup](docs/setup/APIFY_LICENSE_SETUP.md)** - Apify license validation
+
 ### Architecture
 
-For detailed architecture documentation, see the [Architecture Documentation](docs/architecture/README.md) which covers:
+- **[Core Modules Design](docs/architecture/core-modules-design.md)** - System architecture
+- **[Feature Flags](docs/architecture/FEATURE_FLAGS.md)** - Feature flag system
+- **[MCP Tools](docs/mcp/MCP_TOOLS_IMPLEMENTATION.md)** - Tool implementation details
 
-- **Architectural Patterns**: Reactive programming, DDD, circuit breakers, event-driven architecture
-- **System Components**: Domain layers, services, and component interactions
-- **Technology Stack**: Framework choices, database patterns, and integrations
-- **Design Principles**: Domain-driven design, service layer patterns, and best practices
+### Development
 
-### Coding Standards
+- **[Coding Standards](docs/standards/README.md)** - Code quality guidelines
+- **[Testing Guide](docs/testing/README.md)** - Testing standards and practices
+- **[Packaging Guide](docs/setup/PACKAGING.md)** - Build and release process
 
-This project follows industry-standard best practices. See the [Coding Standards](docs/standards/README.md) for:
+## Development
 
-- **Core Principles**: TDD, DRY, KISS, SOLID
-- **Testing Standards**: Unit tests, component tests, coverage requirements
-- **Code Quality**: Code review checklist, design patterns, best practices
-- **Java 21 Features**: Modern language features and usage guidelines
-- **Common Gotchas**: [Common pitfalls and problems](docs/standards/common-gotchas.md) to avoid - includes Spring Boot test configuration, reactive programming pitfalls, and more
+### Running Tests
 
-### MCP Servers Setup
-
-Enhance your AI coding workflow with Model Context Protocol servers. See the [MCP Setup Guide](docs/setup/MCP_SETUP.md) for:
-
-- **Code Indexing**: Fast semantic codebase search (60-80% token savings)
-- **Memory Storage**: Long-term context across sessions (20-40% token savings)
-- **Spring Boot Monitoring**: Real-time logs, health, and metrics (70-90% token savings)
-- **Build Tool Integration**: Gradle and npm dependency analysis
-
-## Getting Started
-
-### Prerequisites
-
-- Java 21+
-- Gradle 8.0+ (or use included wrapper)
-- Docker & Docker Compose
-- Ollama (for local LLM)
-
-### Quick Setup
-
-**Linux/Mac:**
 ```bash
-./scripts/setup.sh
+# All tests
+./gradlew test
+
+# Unit tests only
+./gradlew test --tests "*Test" --exclude-tests "*ComponentTest" --exclude-tests "*E2ETest"
+
+# Component tests
+./gradlew test --tests "adrianmikula.jakartamigration.component.*"
+
+# With coverage
+./gradlew test jacocoTestReport
 ```
 
-**Windows (PowerShell):**
-```powershell
-.\scripts\setup.ps1
-```
+### Building
 
-The setup script will:
-- Install mise-en-place if not present
-- Use mise to install tools (Java 21, Gradle 8.5)
-- Start PostgreSQL and Redis via Docker
-- Create configuration files and directories
-- Build the project
-
-### Configuration
-
-Before running the application, configure any required API keys or secrets:
-
-1. **Copy the example environment file:**
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Configure API keys** - See [Manual Setup Guide](docs/setup/MANUAL_SETUP.md) for detailed instructions on setting up:
-   - GitHub API tokens (if using GitHub integration)
-   - Webhook secrets (if using webhooks)
-   - External API keys (as needed for your application)
-   - Ollama configuration (if using LLM features)
-
-3. **Edit `.env` file** with your actual configuration values
-
-For full setup instructions, see [Manual Setup Guide](docs/setup/MANUAL_SETUP.md).
-
-After setup, use mise commands for daily development:
 ```bash
-mise run test            # Run tests
-mise run run             # Run backend application
-mise run frontend-dev    # Start frontend development server
-mise run frontend-build  # Build frontend for production
-mise tasks               # View all commands
+# Build JAR
+./gradlew bootJar
+
+# Build for release
+./scripts/build-release.sh  # Linux/macOS
+.\scripts\build-release.ps1  # Windows
 ```
-
-### Manual Setup
-
-1. **Start Docker services:**
-   ```bash
-   docker compose up -d
-   ```
-
-2. **Install Ollama (if using LLM features):**
-   ```bash
-   # Linux/Mac
-   curl -fsSL https://ollama.ai/install.sh | sh
-   
-   # Windows: Download from https://ollama.ai
-   
-   # Pull a model (example)
-   ollama pull deepseek-coder:6.7b
-   ```
-
-3. **Initialize Gradle wrapper:**
-   ```bash
-   gradle wrapper
-   ```
-
-4. **Build the project:**
-   ```bash
-   ./gradlew build
-   ```
-
-5. **Run the application:**
-   ```bash
-   ./gradlew bootRun
-   ```
 
 ### Code Coverage
 
-Code coverage reports are automatically generated after each test run using JaCoCo.
+Coverage reports are generated automatically after tests:
 
-**Using Mise (Recommended):**
+- **HTML Report**: `build/reports/jacoco/test/html/index.html`
+- **XML Report**: `build/reports/jacoco/test/jacocoTestReport.xml`
+
 ```bash
-mise run test          # Run tests (automatically generates coverage)
-mise run coverage      # Generate coverage report manually
-mise run coverage-open # Open coverage report in browser
-mise run coverage-clean # Clean coverage reports
-```
-
-**Using Gradle directly:**
-```bash
-# After running tests, coverage reports are available at:
-# HTML: build/reports/jacoco/test/html/index.html
-# XML:  build/reports/jacoco/test/jacocoTestReport.xml
-
-# Generate coverage report manually:
+# Generate coverage
 ./gradlew jacocoTestReport
 
-# Reports are also saved with timestamps for historical tracking:
-# build/reports/jacoco-html-YYYY-MM-DD_HH-mm-ss/
+# View coverage summary
+./gradlew jacocoCoverageSummary
 ```
 
-**Coverage configuration:**
-- Excludes: Config classes, entities, DTOs, and application main class
-- Formats: HTML (interactive) and XML (for CI/CD integration)
-- Historical tracking: Timestamped reports saved for every test run
+## License & Monetization
 
-### Managing Services
+This project uses a hybrid licensing model:
 
-**Start services:**
-- Linux/Mac: `./scripts/start-services.sh`
-- Windows: `.\scripts\start-services.ps1`
+- **Community Tier** - Free, open-source version with basic features
+- **Premium Tier** - Advanced features (auto-fixes, one-click refactor, binary fixes)
+- **Enterprise Tier** - Priority support, cloud hosting, SLA guarantees
 
-**Stop services:**
-- Linux/Mac: `./scripts/stop-services.sh`
-- Windows: `.\scripts\stop-services.ps1`
+License validation supports:
+- **Stripe** - Subscription-based licenses
+- **Apify** - Usage-based billing
+- **Test Keys** - For development and testing
 
-## Running Tests
-
-### Unit Tests
-```bash
-./gradlew test
-```
-
-### Component Tests (Integration Tests)
-Component tests use Spring Boot Test with TestContainers to test major features in a real containerized environment:
-
-```bash
-# Run all tests including component tests
-./gradlew test
-
-# Run only component tests
-./gradlew test --tests "com.yourproject.component.*"
-
-# Run specific component test
-./gradlew test --tests "com.yourproject.component.DataPollingComponentTest"
-```
-
-**Component Test Examples:**
-- End-to-end workflow tests with real databases
-- Redis queue operations
-- LLM integration tests (with mocked clients)
-- HTTP client integration tests
-- Repository service tests
-
-**Note:** Component tests require Docker to be running for TestContainers. See [Component Tests Guide](docs/testing/COMPONENT_TESTS.md) for details.
-
-## Command Reference
-
-### Using Mise (Recommended)
-
-If you have [mise](https://mise.jdx.dev/) installed:
-
-```bash
-mise install          # Install tools and setup
-mise tasks            # View all available commands
-mise run setup        # Run setup
-mise run test         # Run tests (generates coverage automatically)
-mise run coverage      # Generate coverage report
-mise run coverage-open # Open coverage report in browser
-mise run run          # Run application
-```
-
-See `MISE_SETUP.md` for detailed mise setup instructions.
-
-### Direct Commands
-
-See `COMMANDS.md` for a complete catalog of all available commands, scripts, and workflows.
-
-## API Endpoints
-
-The template includes example REST API endpoints. Customize these for your application:
-
-- `GET /actuator/health` - Health check endpoint
-- `GET /actuator/info` - Application information
-
-Add your own endpoints in the `web/controller` package following the existing patterns.
-
-## Building
-
-```bash
-# Build without tests
-./gradlew build -x test
-
-# Build with tests
-./gradlew build
-
-# Create executable JAR
-./gradlew bootJar
-```
-
-## Packaging and Distribution
-
-This project is distributed as an npm package for easy installation with MCP clients.
-
-### Quick Install
-
-```bash
-# Install globally
-npm install -g @jakarta-migration/mcp-server
-
-# Or use with npx (no installation)
-npx -y @jakarta-migration/mcp-server
-```
-
-### Building for Release
-
-**Linux/macOS:**
-```bash
-./scripts/build-release.sh
-```
-
-**Windows:**
-```powershell
-.\scripts\build-release.ps1
-```
-
-This creates release artifacts in the `release/` directory.
-
-### Publishing
-
-See [Packaging Guide](docs/setup/PACKAGING.md) for detailed release instructions.
-
-For installation in MCP clients (Cursor, Claude Code, Antigravity), see [Installation Guide](docs/setup/INSTALLATION.md).
-
-## Next Steps
-
-After cloning this template:
-
-1. **Update package names**: Replace `com.yourproject` with your actual package name
-2. **Customize domain models**: Create your own domain entities and services
-3. **Configure API keys**: Set up any external API integrations you need
-4. **Add your features**: Build on top of the existing infrastructure
-5. **Review documentation**: Check the [docs](docs/) folder for detailed guides
-
-## Template Features
-
-This template provides:
-
-- ✅ **Complete project structure** with best practices
-- ✅ **Testing infrastructure** (unit tests, component tests with TestContainers)
-- ✅ **Code quality tools** and standards
-- ✅ **Docker Compose** setup for local development
-- ✅ **Comprehensive documentation** for setup, testing, and development
-- ✅ **Modern Java features** (Java 21, virtual threads, records, pattern matching)
-- ✅ **Reactive programming** support with Spring WebFlux
-- ✅ **Database migrations** with Liquibase
-- ✅ **Code coverage** reporting with JaCoCo
+See [Monetization Research](docs/research/monetisation.md) for details.
 
 ## Contributing
 
-This is a template repository. Feel free to fork and customize it for your projects.
+Contributions are welcome! Please see the [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## License
 
 MIT
 
+## Resources
+
+- **MCP Documentation**: https://modelcontextprotocol.io
+- **Spring AI**: https://docs.spring.io/spring-ai/reference/
+- **OpenRewrite**: https://docs.openrewrite.org/
+- **Jakarta EE**: https://jakarta.ee/
+
 ---
 
-**Note**: This is a quick-start template. Customize it to fit your specific project needs. Remove or modify any features that don't apply to your use case.
-
-
+**Built with ❤️ for the Java community**

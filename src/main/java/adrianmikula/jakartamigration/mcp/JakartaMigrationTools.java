@@ -14,6 +14,8 @@ import adrianmikula.jakartamigration.runtimeverification.domain.VerificationResu
 import adrianmikula.jakartamigration.runtimeverification.service.RuntimeVerificationModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.mcp.server.Tool;
+import org.springframework.ai.mcp.server.ToolParam;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
@@ -26,8 +28,7 @@ import java.util.stream.Collectors;
  * MCP Tools for Jakarta Migration.
  * Exposes Jakarta migration functionality as MCP tools that can be called by AI assistants.
  * 
- * Note: When Spring AI MCP Server is available, add @Tool annotations.
- * For now, these are standard methods that can be exposed via MCP SDK.
+ * Uses Spring AI 1.0.0 MCP Server annotations to expose tools via the MCP protocol.
  */
 @Component
 @RequiredArgsConstructor
@@ -47,7 +48,13 @@ public class JakartaMigrationTools {
      * @param projectPath Path to the project root directory
      * @return JSON string containing analysis report
      */
-    public String analyzeJakartaReadiness(String projectPath) {
+    @Tool(
+        name = "analyzeJakartaReadiness",
+        description = "Analyzes a Java project for Jakarta migration readiness. Returns a JSON report with readiness score, blockers, and recommendations."
+    )
+    public String analyzeJakartaReadiness(
+        @ToolParam(description = "Path to the project root directory") String projectPath
+    ) {
         try {
             log.info("Analyzing Jakarta readiness for project: {}", projectPath);
             
@@ -77,7 +84,13 @@ public class JakartaMigrationTools {
      * @param projectPath Path to the project root directory
      * @return JSON string containing blockers list
      */
-    public String detectBlockers(String projectPath) {
+    @Tool(
+        name = "detectBlockers",
+        description = "Detects blockers that prevent Jakarta migration. Returns a JSON list of blockers with types, reasons, and mitigation strategies."
+    )
+    public String detectBlockers(
+        @ToolParam(description = "Path to the project root directory") String projectPath
+    ) {
         try {
             log.info("Detecting blockers for project: {}", projectPath);
             
@@ -110,7 +123,13 @@ public class JakartaMigrationTools {
      * @param projectPath Path to the project root directory
      * @return JSON string containing version recommendations
      */
-    public String recommendVersions(String projectPath) {
+    @Tool(
+        name = "recommendVersions",
+        description = "Recommends Jakarta-compatible versions for project dependencies. Returns a JSON list of version recommendations with migration paths and compatibility scores."
+    )
+    public String recommendVersions(
+        @ToolParam(description = "Path to the project root directory") String projectPath
+    ) {
         try {
             log.info("Recommending versions for project: {}", projectPath);
             
@@ -146,7 +165,13 @@ public class JakartaMigrationTools {
      * @param projectPath Path to the project root directory
      * @return JSON string containing migration plan
      */
-    public String createMigrationPlan(String projectPath) {
+    @Tool(
+        name = "createMigrationPlan",
+        description = "Creates a comprehensive migration plan for Jakarta migration. Returns a JSON plan with phases, estimated duration, and risk assessment."
+    )
+    public String createMigrationPlan(
+        @ToolParam(description = "Path to the project root directory") String projectPath
+    ) {
         try {
             log.info("Creating migration plan for project: {}", projectPath);
             
@@ -180,7 +205,14 @@ public class JakartaMigrationTools {
      * @param timeoutSeconds Optional timeout in seconds (default: 30)
      * @return JSON string containing verification result
      */
-    public String verifyRuntime(String jarPath, Integer timeoutSeconds) {
+    @Tool(
+        name = "verifyRuntime",
+        description = "Verifies runtime execution of a migrated Jakarta application. Returns a JSON result with execution status, errors, and metrics."
+    )
+    public String verifyRuntime(
+        @ToolParam(description = "Path to the JAR file to execute") String jarPath,
+        @ToolParam(description = "Optional timeout in seconds (default: 30)", required = false) Integer timeoutSeconds
+    ) {
         try {
             log.info("Verifying runtime for JAR: {}", jarPath);
             

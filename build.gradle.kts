@@ -35,7 +35,7 @@ repositories {
     }
 }
 
-extra["springAiVersion"] = "0.8.0"
+extra["springAiVersion"] = "1.0.0"
 extra["resilience4jVersion"] = "2.1.0"
 extra["jgitVersion"] = "6.8.0.202311291450-r"
 extra["mockWebServerVersion"] = "4.12.0"
@@ -60,8 +60,7 @@ dependencies {
     implementation("org.springframework.ai:spring-ai-ollama-spring-boot-starter:${property("springAiVersion")}")
     
     // Spring AI MCP Server - Building blocks for MCP server development
-    // TODO: Re-enable when dependency is available
-    // implementation("org.springframework.ai:spring-ai-starter-mcp-server:${property("springAiVersion")}")
+    implementation("org.springframework.ai:spring-ai-starter-mcp-server:${property("springAiVersion")}")
     
     // Official MCP Java SDK - Alternative framework-agnostic option
     // Uncomment if you prefer the official SDK over Spring AI

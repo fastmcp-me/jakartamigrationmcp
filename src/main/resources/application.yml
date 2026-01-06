@@ -137,10 +137,21 @@ jakarta:
       # Webhook secret for validating Stripe webhooks (future use)
       webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
 
+# Spring AI MCP Server Configuration
+spring:
+  ai:
+    mcp:
+      server:
+        name: jakarta-migration-mcp
+        version: 1.0.0-SNAPSHOT
+        protocol: STREAMABLE  # STREAMABLE for stdio, SSE for HTTP
+        enabled: true
+
 # Logging Configuration
 logging:
   level:
     root: INFO
     adrianmikula.projectname: DEBUG
+    org.springframework.ai.mcp: DEBUG  # Enable MCP debug logging
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
