@@ -33,6 +33,10 @@ repositories {
     maven {
         url = uri("https://repo.spring.io/snapshot")
     }
+    // JitPack for spring-ai-community mcp-annotations if needed
+    maven {
+        url = uri("https://jitpack.io")
+    }
 }
 
 extra["springAiVersion"] = "1.1.2"
@@ -55,21 +59,19 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 
-    // Spring AI MCP Server - Building blocks for MCP server development
-    // Upgraded to Spring AI 1.1.2 to enable @McpTool annotations
+    // Spring AI MCP Server - Using webmvc starter as per annotation-problems.md Step A
+    // Per docs/standards/annotation-problems.md: "Ensure you are using the specific Server starter"
     // Reference: https://docs.spring.io/spring-ai/reference/api/mcp/mcp-overview.html#_spring_ai_mcp_integration
-    implementation("org.springframework.ai:spring-ai-starter-mcp-server:${property("springAiVersion")}")
+    implementation("org.springframework.ai:spring-ai-starter-mcp-server-webmvc:${property("springAiVersion")}")
     
     // MCP Annotations module for @McpTool annotation support
-    // Explicitly added to ensure annotations are available at compile time
+    // The webmvc starter should include this transitively, but we add it explicitly for compilation
     // According to docs: https://docs.spring.io/spring-ai/reference/api/mcp/mcp-annotations-overview.html
-    // The starter should include this transitively, but we add it explicitly for compilation
     implementation("org.springframework.ai:spring-ai-mcp-annotations:${property("springAiVersion")}")
     
-    // ISSUE: Spring AI 1.1.2's spring-ai-mcp-annotations wraps org.springaicommunity:mcp-annotations
-    // but doesn't re-export the annotation classes in org.springframework.ai.mcp.annotation package.
-    // We need to add the community package directly to access the annotations.
-    // The actual annotations are in org.springaicommunity.mcp.annotations package.
+    // Spring AI Community MCP Annotations - required for @McpTool and @McpToolParam
+    // The annotations are in org.springaicommunity.mcp.annotations package
+    // This is required for the annotation classes to be available at compile time
     implementation("org.springaicommunity:mcp-annotations:0.8.0")
     
     // Note: We don't need spring-ai-core or ollama starter for MCP server functionality

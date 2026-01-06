@@ -1,6 +1,7 @@
 package adrianmikula.jakartamigration.coderefactoring.service;
 
 import adrianmikula.jakartamigration.coderefactoring.domain.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,6 +32,7 @@ import java.util.List;
  * - Apache Tomcat Jakarta EE Migration Tool - Compiled JAR/WAR files (bytecode)
  * - OpenRewrite (when dependency is added) - Source code
  */
+@Slf4j
 public class RefactoringEngine {
     
     private final MigrationTool preferredTool;
@@ -153,8 +155,8 @@ public class RefactoringEngine {
                 }
                 Files.delete(tempDir);
             } catch (IOException e) {
-                // Log but don't fail
-                System.err.println("Failed to clean up temp directory: " + e.getMessage());
+                // Log but don't fail - use logger instead of System.err to avoid corrupting MCP JSON stream
+                log.warn("Failed to clean up temp directory: {}", e.getMessage());
             }
         }
     }

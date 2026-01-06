@@ -4,11 +4,18 @@ spring:
   
   # Database and JPA - DISABLED (not needed for MCP server)
   # The MCP server doesn't require a database
+  # CRITICAL: Excluding all database-related auto-configurations to prevent startup failures
+  # when no database is available. This is essential for MCP server operation.
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
       - org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration
+      - org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
 # Actuator Configuration
 management:
@@ -149,13 +156,12 @@ jakarta:
           path: ${MCP_SSE_PATH:/mcp/sse}
 
 # Logging Configuration
-# CRITICAL: For MCP stdio transport, root logging must be WARN to prevent STDOUT corruption
-# System.out.println or INFO-level logs will corrupt the MCP JSON stream
+# CRITICAL: root level must be WARN to keep STDOUT clean for MCP JSON stream
+# System.out.println and log messages to STDOUT corrupt the MCP JSON stream
 logging:
   level:
-    root: WARN  # Only warnings and errors to keep STDOUT clean for JSON-RPC
-    adrianmikula.jakartamigration: INFO  # Application logs at INFO level
-    org.springframework.ai.mcp: INFO  # MCP logs at INFO level (not DEBUG to reduce noise)
-    org.springframework: WARN  # Spring framework logs at WARN
+    root: WARN  # Keep STDOUT clean for MCP JSON stream
+    adrianmikula.jakartamigration: DEBUG  # Debug logging for our application
+    org.springframework.ai.mcp: DEBUG  # Enable MCP debug logging
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

@@ -3,8 +3,10 @@ package adrianmikula.projectname;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.Arrays;
@@ -16,11 +18,17 @@ import java.util.Arrays;
  * Spring Boot banner is disabled, and logging is configured to use stderr.
  * 
  * Database and JPA auto-configuration are excluded as they're not needed for the MCP server.
+ * 
+ * CRITICAL: We exclude all database-related auto-configurations to prevent Spring from
+ * trying to initialize database connections, which causes startup failures when no database
+ * is available. This is essential for MCP server operation.
  */
 @SpringBootApplication(exclude = {
     DataSourceAutoConfiguration.class,
+    JdbcTemplateAutoConfiguration.class,
     HibernateJpaAutoConfiguration.class,
-    LiquibaseAutoConfiguration.class
+    LiquibaseAutoConfiguration.class,
+    TransactionAutoConfiguration.class
 })
 @EnableScheduling
 public class ProjectNameApplication {
