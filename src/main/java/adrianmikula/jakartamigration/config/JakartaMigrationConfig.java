@@ -36,6 +36,15 @@ public class JakartaMigrationConfig {
      * WebClient for Apify API calls.
      * Configured with Apify API base URL and appropriate timeouts.
      */
+    /**
+     * ApifyBillingService bean.
+     * Handles billing events for premium features when deployed on Apify.
+     */
+    @Bean
+    public ApifyBillingService apifyBillingService(ApifyLicenseProperties apifyProperties) {
+        return new ApifyBillingService(apifyProperties);
+    }
+
     @Bean
     public WebClient apifyWebClient(ApifyLicenseProperties apifyProperties) {
         return WebClient.builder()

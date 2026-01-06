@@ -7,6 +7,7 @@ import adrianmikula.jakartamigration.dependencyanalysis.domain.*;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyAnalysisModule;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyGraphBuilder;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyGraphException;
+import adrianmikula.jakartamigration.config.ApifyBillingService;
 import adrianmikula.jakartamigration.config.FeatureFlag;
 import adrianmikula.jakartamigration.config.FeatureFlagsService;
 import adrianmikula.jakartamigration.runtimeverification.domain.VerificationOptions;
@@ -41,6 +42,7 @@ public class JakartaMigrationTools {
     private final RecipeLibrary recipeLibrary;
     private final RuntimeVerificationModule runtimeVerificationModule;
     private final FeatureFlagsService featureFlags;
+    private final ApifyBillingService apifyBillingService;
     
     /**
      * Analyzes a Java project for Jakarta migration readiness.
@@ -186,6 +188,9 @@ public class JakartaMigrationTools {
             // Create migration plan
             MigrationPlan plan = migrationPlanner.createPlan(projectPath, report);
             
+            // Charge for billable event (premium feature)
+            apifyBillingService.chargeEvent("migration-plan-created");
+            
             // Build response
             return buildMigrationPlanResponse(plan);
             
@@ -234,6 +239,9 @@ public class JakartaMigrationTools {
             
             // Verify runtime
             VerificationResult result = runtimeVerificationModule.verifyRuntime(jar, options);
+            
+            // Charge for billable event (premium feature)
+            apifyBillingService.chargeEvent("runtime-verification-executed");
             
             // Build response
             return buildVerificationResponse(result);
