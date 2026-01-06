@@ -13,14 +13,32 @@ import com.bugbounty.jakartamigration.runtimeverification.service.impl.RuntimeVe
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.time.Duration;
 
 /**
  * Configuration for Jakarta Migration modules.
  * Wires up all the service implementations.
  */
 @Configuration
-@EnableConfigurationProperties(FeatureFlagsProperties.class)
+@EnableConfigurationProperties({FeatureFlagsProperties.class, ApifyLicenseProperties.class})
 public class JakartaMigrationConfig {
+    
+    /**
+     * WebClient for Apify API calls.
+     * Configured with Apify API base URL and appropriate timeouts.
+     */
+    @Bean
+    public WebClient apifyWebClient(ApifyLicenseProperties apifyProperties) {
+        return WebClient.builder()
+            .baseUrl(apifyProperties.getApiUrl())
+            .defaultHeader("Content-Type", "application/json")
+            .codecs(configurer -> configurer
+                .defaultCodecs()
+                .maxInMemorySize(1024 * 1024)) // 1MB
+            .build();
+    }
     
     @Bean
     public DependencyGraphBuilder dependencyGraphBuilder() {

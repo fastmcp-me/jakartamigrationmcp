@@ -41,7 +41,7 @@ public class DependencyAnalysisModuleImpl implements DependencyAnalysisModule {
         List<Blocker> blockers = detectBlockers(graph);
         
         // Get recommendations
-        List<Artifact> artifacts = graph.nodes().stream().collect(Collectors.toList());
+        List<Artifact> artifacts = graph.getNodes().stream().collect(Collectors.toList());
         List<VersionRecommendation> recommendations = recommendVersions(artifacts);
         
         // Analyze transitive conflicts
@@ -69,7 +69,7 @@ public class DependencyAnalysisModuleImpl implements DependencyAnalysisModule {
         
         Map<Artifact, Namespace> namespaceMap = new HashMap<>();
         
-        for (Artifact artifact : graph.nodes()) {
+        for (Artifact artifact : graph.getNodes()) {
             Namespace namespace = namespaceClassifier.classify(artifact);
             namespaceMap.put(artifact, namespace);
         }
@@ -84,7 +84,7 @@ public class DependencyAnalysisModuleImpl implements DependencyAnalysisModule {
         List<Blocker> blockers = new ArrayList<>();
         NamespaceCompatibilityMap namespaceMap = identifyNamespaces(graph);
         
-        for (Artifact artifact : graph.nodes()) {
+        for (Artifact artifact : graph.getNodes()) {
             Namespace namespace = namespaceMap.get(artifact);
             
             // Check if artifact is javax and has no Jakarta equivalent

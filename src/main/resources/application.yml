@@ -55,6 +55,7 @@ jakarta:
       
       # License key for premium features
       # Can be set via environment variable: JAKARTA_MCP_LICENSE_KEY
+      # For Apify: Use your Apify API token
       license-key: ${JAKARTA_MCP_LICENSE_KEY:}
       
       # Per-feature overrides (optional)
@@ -66,6 +67,33 @@ jakarta:
         
         # Example: Disable cloud hosting even for premium users
         # cloud-hosting: false
+    
+    # Apify License Validation Configuration
+    apify:
+      # Enable/disable Apify license validation
+      enabled: ${APIFY_VALIDATION_ENABLED:true}
+      
+      # Apify API base URL (usually doesn't need to change)
+      api-url: ${APIFY_API_URL:https://api.apify.com/v2}
+      
+      # Your Apify API token (for making validation requests)
+      # This is YOUR account token, not the user's license key
+      # Can be set via environment variable: APIFY_API_TOKEN
+      api-token: ${APIFY_API_TOKEN:}
+      
+      # Cache TTL for license validation results (seconds)
+      # Prevents excessive API calls
+      cache-ttl-seconds: ${APIFY_CACHE_TTL:3600}
+      
+      # Request timeout (seconds)
+      timeout-seconds: ${APIFY_TIMEOUT:5}
+      
+      # Actor ID/name for license validation (optional)
+      # If your MCP server is deployed as an Apify Actor, specify it here
+      actor-id: ${APIFY_ACTOR_ID:}
+      
+      # Allow offline validation when API is unavailable
+      allow-offline-validation: ${APIFY_ALLOW_OFFLINE:true}
 
 # Logging Configuration
 logging:

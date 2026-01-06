@@ -371,16 +371,5 @@ public class JakartaMigrationTools {
                   .replace("\r", "\\r")
                   .replace("\t", "\\t");
     }
-    
-    private String createUpgradeRequiredResponse(FeatureFlag flag, String message) {
-        String upgradeMessage = featureFlags.getUpgradeMessage(flag);
-        return "{\n" +
-               "  \"status\": \"upgrade_required\",\n" +
-               "  \"message\": \"" + escapeJson(message) + "\",\n" +
-               "  \"upgradeMessage\": \"" + escapeJson(upgradeMessage) + "\",\n" +
-               "  \"requiredTier\": \"" + flag.getRequiredTier() + "\",\n" +
-               "  \"currentTier\": \"" + featureFlags.getCurrentTier() + "\"\n" +
-               "}";
-    }
 }
 

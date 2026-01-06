@@ -1,30 +1,32 @@
 package com.bugbounty.jakartamigration.config;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
  * Service for license key validation and tier determination.
  * 
- * This is a placeholder implementation. In production, this would:
- * - Validate license keys against a license server
- * - Check license expiration dates
- * - Verify license signatures
- * - Support different license types (trial, subscription, perpetual)
- * 
- * For now, this implements a simple validation that can be extended later.
+ * This service delegates to ApifyLicenseService for Apify-based validation,
+ * with fallback to simple local validation.
  * 
  * Future implementations could integrate with:
- * - Stripe for subscription validation
- * - Apify for usage-based billing
+ * - Stripe for subscription validation (planned)
  * - Custom license server
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class LicenseService {
+
+    private final ApifyLicenseService apifyLicenseService;
 
     /**
      * Validate a license key and return the associated tier.
+     * 
+     * This method:
+     * 1. First tries Apify validation (if enabled)
+     * 2. Falls back to simple pattern matching
      * 
      * @param licenseKey The license key to validate
      * @return The license tier if valid, null if invalid
@@ -34,31 +36,37 @@ public class LicenseService {
             return null;
         }
 
-        // TODO: Implement actual license validation
-        // For now, simple placeholder logic:
-        // - Keys starting with "PREMIUM-" are premium tier
-        // - Keys starting with "ENTERPRISE-" are enterprise tier
-        // - Everything else is invalid
+        // Try Apify validation first
+        FeatureFlagsProperties.LicenseTier tier = apifyLicenseService.validateLicense(licenseKey);
+        if (tier != null) {
+            return tier;
+        }
 
+        // Fallback to simple validation for test keys
+        // Keys starting with "PREMIUM-" are premium tier
+        // Keys starting with "ENTERPRISE-" are enterprise tier
         if (licenseKey.startsWith("PREMIUM-")) {
-            log.debug("Valid premium license key detected");
+            log.debug("Valid premium license key detected (test key)");
             return FeatureFlagsProperties.LicenseTier.PREMIUM;
         }
 
         if (licenseKey.startsWith("ENTERPRISE-")) {
-            log.debug("Valid enterprise license key detected");
+            log.debug("Valid enterprise license key detected (test key)");
             return FeatureFlagsProperties.LicenseTier.ENTERPRISE;
         }
 
-        // In production, this would:
-        // 1. Decode/decrypt the license key
-        // 2. Verify signature
-        // 3. Check expiration date
-        // 4. Validate against license server (if online validation)
-        // 5. Return appropriate tier
-
-        log.warn("Invalid license key format: {}", licenseKey.substring(0, Math.min(10, licenseKey.length())) + "...");
+        log.debug("Invalid license key format: {}", maskKey(licenseKey));
         return null;
+    }
+
+    /**
+     * Mask license key for logging.
+     */
+    private String maskKey(String key) {
+        if (key == null || key.length() <= 8) {
+            return "***";
+        }
+        return key.substring(0, 4) + "..." + key.substring(key.length() - 4);
     }
 
     /**

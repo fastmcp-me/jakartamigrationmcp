@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
  * based on the user's license tier.
  */
 @Getter
-@RequiredArgsConstructor
 public enum FeatureFlag {
 
     /**
@@ -152,6 +151,16 @@ public enum FeatureFlag {
      * Minimum license tier required to use this feature.
      */
     private final FeatureFlagsProperties.LicenseTier requiredTier;
+
+    /**
+     * Enum constructor.
+     */
+    FeatureFlag(String key, String name, String description, FeatureFlagsProperties.LicenseTier requiredTier) {
+        this.key = key;
+        this.name = name;
+        this.description = description;
+        this.requiredTier = requiredTier;
+    }
 
     /**
      * Check if this feature is available for the given tier.
