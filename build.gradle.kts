@@ -35,7 +35,7 @@ repositories {
     }
 }
 
-extra["springAiVersion"] = "1.0.0"
+extra["springAiVersion"] = "1.1.2"
 extra["resilience4jVersion"] = "2.1.0"
 extra["jgitVersion"] = "6.8.0.202311291450-r"
 extra["mockWebServerVersion"] = "4.12.0"
@@ -55,16 +55,18 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 
-    // Spring AI
-    implementation("org.springframework.ai:spring-ai-core:${property("springAiVersion")}")
-    implementation("org.springframework.ai:spring-ai-ollama-spring-boot-starter:${property("springAiVersion")}")
-    
     // Spring AI MCP Server - Building blocks for MCP server development
+    // Upgraded to Spring AI 1.1.2 to enable @McpTool annotations
+    // Reference: https://docs.spring.io/spring-ai/reference/api/mcp/mcp-overview.html#_spring_ai_mcp_integration
     implementation("org.springframework.ai:spring-ai-starter-mcp-server:${property("springAiVersion")}")
     
-    // Official MCP Java SDK - Alternative framework-agnostic option
-    // Uncomment if you prefer the official SDK over Spring AI
-    // implementation("com.modelcontextprotocol:mcp-java-sdk:1.0.0")
+    // MCP Annotations module for @McpTool annotation support
+    // Note: According to Spring AI docs, annotations should be included in the starter
+    // If not available, may need to check if module exists or use manual registration
+    // implementation("org.springframework.ai:spring-ai-mcp-annotations:${property("springAiVersion")}")
+    
+    // Note: We don't need spring-ai-core or ollama starter for MCP server functionality
+    // The MCP server starter includes all necessary dependencies
 
     // Resilience4j
     implementation("io.github.resilience4j:resilience4j-spring-boot3:${property("resilience4jVersion")}")

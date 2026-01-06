@@ -151,6 +151,9 @@ jakarta:
         # Transport mode: stdio (default, for local) or sse (for Apify/HTTP)
         transport: ${MCP_TRANSPORT:stdio}
         enabled: true
+        # Enable annotation scanner to automatically register @McpTool annotated methods
+        annotation-scanner:
+          enabled: true
         # SSE configuration (only used when transport=sse)
         sse:
           port: ${MCP_SSE_PORT:8080}
