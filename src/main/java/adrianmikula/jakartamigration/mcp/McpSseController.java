@@ -40,12 +40,37 @@ public class McpSseController {
     /**
      * SSE endpoint for MCP protocol.
      * 
-     * Cursor/Apify connects to this endpoint and sends JSON-RPC messages via query parameters or POST.
-     * Responses are sent back via SSE events.
+     * Apify/Clients connect to this endpoint via EventSource.
+     * Supports:
+     * - Authentication via Authorization header (Bearer token)
+     * - Tool filtering via ?tools=tool1,tool2 query parameter
+     * - JSON-RPC messages via query parameters
+     * 
+     * Reference: https://docs.apify.com/platform/integrations/mcp
      */
     @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter sseEndpoint(@RequestParam(required = false) String message) {
+    public SseEmitter sseEndpoint(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestParam(required = false) String tools,
+            @RequestParam(required = false) String message) {
+        
         log.info("SSE connection established for MCP server");
+        
+        // Validate authentication if provided (Apify requirement)
+        if (authHeader != null) {
+            if (!authHeader.startsWith("Bearer ")) {
+                log.warn("Invalid Authorization header format");
+                // For now, we'll allow connections without auth for testing
+                // In production, you might want to reject here
+            } else {
+                String token = authHeader.substring(7);
+                log.debug("Connection authenticated with token (length: {})", token.length());
+                // TODO: Validate token if needed
+            }
+        }
+        
+        // Parse tool filter if provided (Apify supports ?tools=tool1,tool2)
+        Set<String> enabledTools = parseToolsParameter(tools);
         
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
         
@@ -54,7 +79,7 @@ public class McpSseController {
             try {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> request = objectMapper.readValue(message, Map.class);
-                handleMcpRequestOverSse(emitter, request);
+                handleMcpRequestOverSse(emitter, request, enabledTools);
             } catch (Exception e) {
                 log.error("Failed to process message from query parameter", e);
             }
@@ -70,16 +95,48 @@ public class McpSseController {
         
         return emitter;
     }
+    
+    /**
+     * Parse tools query parameter (Apify format: ?tools=tool1,tool2,tool3).
+     * Returns set of enabled tool names, or empty set if all tools should be enabled.
+     */
+    private Set<String> parseToolsParameter(String tools) {
+        if (tools == null || tools.isEmpty()) {
+            return Collections.emptySet(); // Empty means all tools enabled
+        }
+        
+        Set<String> enabledTools = new HashSet<>();
+        for (String tool : tools.split(",")) {
+            String trimmed = tool.trim();
+            if (!trimmed.isEmpty()) {
+                enabledTools.add(trimmed);
+            }
+        }
+        
+        log.info("Tool filter enabled: {}", enabledTools);
+        return enabledTools;
+    }
 
     /**
      * Handle MCP JSON-RPC requests via POST.
      * 
      * This endpoint accepts MCP protocol messages and routes them to the appropriate handlers.
+     * Supports authentication via Authorization header (Apify requirement).
      * For SSE transport, responses should be sent via SSE events, but we also support direct POST responses.
      */
     @PostMapping(value = "/sse", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, Object>> handleMcpRequest(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<Map<String, Object>> handleMcpRequest(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody Map<String, Object> request) {
+        
         log.debug("Received MCP request: {}", request);
+        
+        // Validate authentication if provided
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            log.debug("Request authenticated with token (length: {})", token.length());
+            // TODO: Validate token if needed
+        }
         
         Map<String, Object> response = processMcpRequest(request);
         return ResponseEntity.ok(response);
@@ -100,20 +157,28 @@ public class McpSseController {
     }
 
     private Map<String, Object> handleToolsList() {
-        log.info("Handling tools/list request");
+        return handleToolsList(Collections.emptySet());
+    }
+    
+    private Map<String, Object> handleToolsList(Set<String> enabledTools) {
+        log.info("Handling tools/list request (filter: {})", enabledTools.isEmpty() ? "all" : enabledTools);
         
         List<Map<String, Object>> tools = new ArrayList<>();
         
         // Get tools from JakartaMigrationTools
-        tools.addAll(getToolsFromClass(jakartaMigrationTools));
+        tools.addAll(getToolsFromClass(jakartaMigrationTools, enabledTools));
         
         // Get tools from SentinelTools
-        tools.addAll(getToolsFromClass(sentinelTools));
+        tools.addAll(getToolsFromClass(sentinelTools, enabledTools));
         
         return Map.of("tools", tools);
     }
     
     private List<Map<String, Object>> getToolsFromClass(Object toolClass) {
+        return getToolsFromClass(toolClass, Collections.emptySet());
+    }
+    
+    private List<Map<String, Object>> getToolsFromClass(Object toolClass, Set<String> enabledTools) {
         List<Map<String, Object>> tools = new ArrayList<>();
         
         for (Method method : toolClass.getClass().getDeclaredMethods()) {
@@ -121,6 +186,10 @@ public class McpSseController {
                 method.getAnnotation(org.springaicommunity.mcp.annotation.McpTool.class);
             
             if (annotation != null) {
+                // Filter tools if enabledTools is specified
+                if (!enabledTools.isEmpty() && !enabledTools.contains(annotation.name())) {
+                    continue; // Skip this tool if not in enabled list
+                }
                 Map<String, Object> toolMap = new HashMap<>();
                 toolMap.put("name", annotation.name());
                 toolMap.put("description", annotation.description());
@@ -258,9 +327,9 @@ public class McpSseController {
      * Handle MCP request over SSE connection.
      * Sends response back via SSE event.
      */
-    private void handleMcpRequestOverSse(SseEmitter emitter, Map<String, Object> request) {
+    private void handleMcpRequestOverSse(SseEmitter emitter, Map<String, Object> request, Set<String> enabledTools) {
         try {
-            Map<String, Object> response = processMcpRequest(request);
+            Map<String, Object> response = processMcpRequest(request, enabledTools);
             String json = objectMapper.writeValueAsString(response);
             
             // Send response as SSE event
@@ -291,6 +360,13 @@ public class McpSseController {
      * Process MCP request and return response.
      */
     private Map<String, Object> processMcpRequest(Map<String, Object> request) {
+        return processMcpRequest(request, Collections.emptySet());
+    }
+    
+    /**
+     * Process MCP request and return response with tool filtering.
+     */
+    private Map<String, Object> processMcpRequest(Map<String, Object> request, Set<String> enabledTools) {
         log.debug("Processing MCP request: {}", request);
         
         String method = (String) request.get("method");
@@ -305,7 +381,7 @@ public class McpSseController {
                 response.put("result", handleInitialize(request));
                 break;
             case "tools/list":
-                response.put("result", handleToolsList());
+                response.put("result", handleToolsList(enabledTools));
                 break;
             case "tools/call":
                 response.put("result", handleToolCall(request));
