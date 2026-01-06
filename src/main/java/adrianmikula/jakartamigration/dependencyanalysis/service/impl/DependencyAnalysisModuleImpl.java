@@ -3,6 +3,7 @@ package adrianmikula.jakartamigration.dependencyanalysis.service.impl;
 import adrianmikula.jakartamigration.dependencyanalysis.domain.*;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyAnalysisModule;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyGraphBuilder;
+import adrianmikula.jakartamigration.dependencyanalysis.service.JakartaMappingService;
 import adrianmikula.jakartamigration.dependencyanalysis.service.NamespaceClassifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -27,6 +29,7 @@ public class DependencyAnalysisModuleImpl implements DependencyAnalysisModule {
     
     private final DependencyGraphBuilder dependencyGraphBuilder;
     private final NamespaceClassifier namespaceClassifier;
+    private final JakartaMappingService jakartaMappingService;
     
     @Override
     public DependencyAnalysisReport analyzeProject(Path projectPath) {
@@ -102,6 +105,18 @@ public class DependencyAnalysisModuleImpl implements DependencyAnalysisModule {
                         0.9
                     ));
                 }
+            } else if (namespace == Namespace.UNKNOWN) {
+                // Check if it's a Jakarta-compatible framework (e.g., Spring Boot 3.x)
+                // Don't flag these as blockers
+                if (!jakartaMappingService.isJakartaCompatible(
+                    artifact.groupId(), 
+                    artifact.artifactId(), 
+                    artifact.version()
+                )) {
+                    // Only flag as blocker if it's truly unknown and not Jakarta-compatible
+                    log.debug("Unknown namespace artifact: {}:{}:{}", 
+                        artifact.groupId(), artifact.artifactId(), artifact.version());
+                }
             }
         }
         
@@ -115,16 +130,50 @@ public class DependencyAnalysisModuleImpl implements DependencyAnalysisModule {
         List<VersionRecommendation> recommendations = new ArrayList<>();
         
         for (Artifact artifact : artifacts) {
-            // Check if this is a javax artifact
+            // Check if this is a javax artifact by groupId
             if (artifact.groupId().startsWith("javax.")) {
-                // Try to find Jakarta equivalent
-                Artifact jakartaEquivalent = findJakartaEquivalent(artifact);
+                Optional<JakartaMappingService.JakartaEquivalent> mapping = 
+                    jakartaMappingService.findMapping(artifact);
                 
-                if (jakartaEquivalent != null) {
+                if (mapping.isPresent()) {
+                    JakartaMappingService.JakartaEquivalent equivalent = mapping.get();
+                    Artifact jakartaArtifact = new Artifact(
+                        equivalent.jakartaGroupId(),
+                        equivalent.jakartaArtifactId(),
+                        equivalent.jakartaVersion(),
+                        artifact.scope(),
+                        artifact.transitive()
+                    );
+                    
                     recommendations.add(new VersionRecommendation(
                         artifact,
-                        jakartaEquivalent,
-                        "Migrate to Jakarta namespace: " + jakartaEquivalent.groupId() + ":" + jakartaEquivalent.artifactId(),
+                        jakartaArtifact,
+                        "Migrate to Jakarta namespace: " + equivalent.jakartaGroupId() + ":" + equivalent.jakartaArtifactId(),
+                        List.of("Update imports from javax.* to jakarta.*", "Update dependency coordinates"),
+                        0.95
+                    ));
+                }
+            } else if (artifact.artifactId().startsWith("javax-") || 
+                       artifact.artifactId().equals("javax.mail") ||
+                       artifact.artifactId().equals("validation-api")) {
+                // Check by artifactId as well
+                Optional<JakartaMappingService.JakartaEquivalent> mapping = 
+                    jakartaMappingService.findMapping(artifact);
+                
+                if (mapping.isPresent()) {
+                    JakartaMappingService.JakartaEquivalent equivalent = mapping.get();
+                    Artifact jakartaArtifact = new Artifact(
+                        equivalent.jakartaGroupId(),
+                        equivalent.jakartaArtifactId(),
+                        equivalent.jakartaVersion(),
+                        artifact.scope(),
+                        artifact.transitive()
+                    );
+                    
+                    recommendations.add(new VersionRecommendation(
+                        artifact,
+                        jakartaArtifact,
+                        "Migrate to Jakarta namespace: " + equivalent.jakartaGroupId() + ":" + equivalent.jakartaArtifactId(),
                         List.of("Update imports from javax.* to jakarta.*", "Update dependency coordinates"),
                         0.95
                     ));
@@ -144,8 +193,6 @@ public class DependencyAnalysisModuleImpl implements DependencyAnalysisModule {
         
         // Check for mixed namespaces in transitive dependencies
         for (Artifact artifact : graph.getNodes()) {
-            Namespace artifactNamespace = namespaceMap.get(artifact);
-            
             // Find dependencies of this artifact
             List<Artifact> dependencies = graph.getEdges().stream()
                 .filter(e -> e.from().equals(artifact))
@@ -253,59 +300,28 @@ public class DependencyAnalysisModuleImpl implements DependencyAnalysisModule {
     }
     
     private boolean hasJakartaEquivalent(Artifact artifact) {
-        // Simple check: if groupId starts with javax., check if jakarta. equivalent exists
+        // Check if it's a Jakarta-compatible framework (e.g., Spring Boot 3.x)
+        if (jakartaMappingService.isJakartaCompatible(
+            artifact.groupId(), 
+            artifact.artifactId(), 
+            artifact.version()
+        )) {
+            return true; // Framework already uses Jakarta
+        }
+        
+        // Check if there's a mapping for this javax artifact
         if (artifact.groupId().startsWith("javax.")) {
-            String jakartaGroupId = artifact.groupId().replace("javax.", "jakarta.");
-            // In a real implementation, this would check a database or registry
-            // For now, we'll assume common Jakarta equivalents exist
-            return isKnownJakartaEquivalent(jakartaGroupId, artifact.artifactId());
+            return jakartaMappingService.hasMapping(artifact.groupId(), artifact.artifactId());
         }
+        
+        // Check by artifactId as well
+        if (artifact.artifactId().startsWith("javax-") || 
+            artifact.artifactId().equals("javax.mail") ||
+            artifact.artifactId().equals("validation-api")) {
+            return jakartaMappingService.hasMapping(artifact.groupId(), artifact.artifactId());
+        }
+        
         return false;
-    }
-    
-    private boolean isKnownJakartaEquivalent(String groupId, String artifactId) {
-        // Common Jakarta equivalents
-        return (groupId.equals("jakarta.servlet") && artifactId.contains("servlet")) ||
-               (groupId.equals("jakarta.persistence") && artifactId.contains("persistence")) ||
-               (groupId.equals("jakarta.validation") && artifactId.contains("validation")) ||
-               (groupId.equals("jakarta.ejb") && artifactId.contains("ejb"));
-    }
-    
-    private Artifact findJakartaEquivalent(Artifact javaxArtifact) {
-        if (!javaxArtifact.groupId().startsWith("javax.")) {
-            return null;
-        }
-        
-        String jakartaGroupId = javaxArtifact.groupId().replace("javax.", "jakarta.");
-        String jakartaArtifactId = javaxArtifact.artifactId().replace("javax-", "jakarta-");
-        
-        // Try to determine version (usually same or newer)
-        String version = determineJakartaVersion(javaxArtifact.version());
-        
-        return new Artifact(
-            jakartaGroupId,
-            jakartaArtifactId,
-            version,
-            javaxArtifact.scope(),
-            javaxArtifact.transitive()
-        );
-    }
-    
-    private String determineJakartaVersion(String javaxVersion) {
-        // Simple version mapping - in production, use a proper version mapping service
-        // For servlet-api: 4.0.1 -> 6.0.0
-        // For persistence-api: 2.2 -> 3.0.0
-        // Default: try to increment major version
-        try {
-            String[] parts = javaxVersion.split("\\.");
-            if (parts.length > 0) {
-                int major = Integer.parseInt(parts[0]);
-                return (major + 2) + ".0.0"; // Rough estimate
-            }
-        } catch (NumberFormatException e) {
-            // Fall through
-        }
-        return "6.0.0"; // Default Jakarta version
     }
 }
 

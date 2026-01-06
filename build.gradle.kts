@@ -113,6 +113,9 @@ dependencies {
     // ASM for bytecode analysis
     implementation("org.ow2.asm:asm:9.6")
     implementation("org.ow2.asm:asm-commons:9.6")
+    
+    // SnakeYAML for parsing Jakarta mappings YAML file
+    implementation("org.yaml:snakeyaml:2.2")
 }
 
 dependencyManagement {

@@ -7,8 +7,10 @@ import adrianmikula.jakartamigration.coderefactoring.service.ChangeTracker;
 import adrianmikula.jakartamigration.coderefactoring.service.ProgressTracker;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyAnalysisModule;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyGraphBuilder;
+import adrianmikula.jakartamigration.dependencyanalysis.service.JakartaMappingService;
 import adrianmikula.jakartamigration.dependencyanalysis.service.NamespaceClassifier;
 import adrianmikula.jakartamigration.dependencyanalysis.service.impl.DependencyAnalysisModuleImpl;
+import adrianmikula.jakartamigration.dependencyanalysis.service.impl.JakartaMappingServiceImpl;
 import adrianmikula.jakartamigration.dependencyanalysis.service.impl.MavenDependencyGraphBuilder;
 import adrianmikula.jakartamigration.dependencyanalysis.service.impl.SimpleNamespaceClassifier;
 import adrianmikula.jakartamigration.runtimeverification.service.RuntimeVerificationModule;
@@ -84,11 +86,17 @@ public class JakartaMigrationConfig {
     }
     
     @Bean
+    public JakartaMappingService jakartaMappingService() {
+        return new JakartaMappingServiceImpl();
+    }
+    
+    @Bean
     public DependencyAnalysisModule dependencyAnalysisModule(
         DependencyGraphBuilder dependencyGraphBuilder,
-        NamespaceClassifier namespaceClassifier
+        NamespaceClassifier namespaceClassifier,
+        JakartaMappingService jakartaMappingService
     ) {
-        return new DependencyAnalysisModuleImpl(dependencyGraphBuilder, namespaceClassifier);
+        return new DependencyAnalysisModuleImpl(dependencyGraphBuilder, namespaceClassifier, jakartaMappingService);
     }
     
     @Bean
