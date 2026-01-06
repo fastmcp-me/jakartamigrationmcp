@@ -4,8 +4,19 @@ This directory contains JSON Schema definitions for the Jakarta Migration MCP Se
 
 ## Files
 
-- **`mcp-input-schemas.json`** - Input parameter schemas for all MCP tools
-- **`mcp-output-schemas.json`** - Output response schemas for all MCP tools
+### MCP Client Schemas (JSON Schema Draft 7)
+
+- **`mcp-input-schemas.json`** - Input parameter schemas for all MCP tools (for MCP client validation)
+- **`mcp-output-schemas.json`** - Output response schemas for all MCP tools (for MCP client validation)
+- **`example-requests-responses.json`** - Example request/response pairs
+
+### Apify Actor Schemas
+
+- **`.actor/input_schema.json`** - Apify input schema for Actor UI generation
+- **`.actor/output_schema.json`** - Apify output schema for output display
+- **`.actor/actor.json`** - Actor metadata and configuration
+
+See [APIFY_SCHEMAS.md](APIFY_SCHEMAS.md) for details on Apify-specific schemas.
 
 ## Usage
 
