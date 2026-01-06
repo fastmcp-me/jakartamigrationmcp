@@ -40,21 +40,24 @@ public class McpSseController {
     /**
      * SSE endpoint for MCP protocol.
      * 
-     * Apify will connect to this endpoint to communicate with the MCP server.
+     * Cursor/Apify connects to this endpoint and sends JSON-RPC messages via query parameters or POST.
+     * Responses are sent back via SSE events.
      */
     @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter sseEndpoint() {
+    public SseEmitter sseEndpoint(@RequestParam(required = false) String message) {
         log.info("SSE connection established for MCP server");
         
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
         
-        // Send initial connection message
-        try {
-            sendSseMessage(emitter, "connected", Map.of("status", "ready"));
-        } catch (IOException e) {
-            log.error("Failed to send initial SSE message", e);
-            emitter.completeWithError(e);
-            return emitter;
+        // Handle incoming message if provided via query parameter
+        if (message != null && !message.isEmpty()) {
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> request = objectMapper.readValue(message, Map.class);
+                handleMcpRequestOverSse(emitter, request);
+            } catch (Exception e) {
+                log.error("Failed to process message from query parameter", e);
+            }
         }
         
         // Handle connection lifecycle
@@ -72,52 +75,14 @@ public class McpSseController {
      * Handle MCP JSON-RPC requests via POST.
      * 
      * This endpoint accepts MCP protocol messages and routes them to the appropriate handlers.
+     * For SSE transport, responses should be sent via SSE events, but we also support direct POST responses.
      */
     @PostMapping(value = "/sse", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> handleMcpRequest(@RequestBody Map<String, Object> request) {
         log.debug("Received MCP request: {}", request);
         
-        try {
-            String method = (String) request.get("method");
-            Object id = request.get("id");
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("jsonrpc", "2.0");
-            response.put("id", id);
-            
-            switch (method) {
-                case "initialize":
-                    response.put("result", handleInitialize(request));
-                    break;
-                case "tools/list":
-                    response.put("result", handleToolsList());
-                    break;
-                case "tools/call":
-                    response.put("result", handleToolCall(request));
-                    break;
-                case "ping":
-                    response.put("result", Map.of("status", "pong"));
-                    break;
-                default:
-                    response.put("error", Map.of(
-                        "code", -32601,
-                        "message", "Method not found: " + method
-                    ));
-            }
-            
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
-            log.error("Error handling MCP request", e);
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("jsonrpc", "2.0");
-            errorResponse.put("id", request.get("id"));
-            errorResponse.put("error", Map.of(
-                "code", -32603,
-                "message", "Internal error: " + e.getMessage()
-            ));
-            return ResponseEntity.ok(errorResponse);
-        }
+        Map<String, Object> response = processMcpRequest(request);
+        return ResponseEntity.ok(response);
     }
 
     private Map<String, Object> handleInitialize(Map<String, Object> request) {
@@ -271,8 +236,91 @@ public class McpSseController {
 
     private Map<String, Object> getServerCapabilities() {
         Map<String, Object> capabilities = new HashMap<>();
-        capabilities.put("tools", Map.of());
+        // Enable tools capability
+        Map<String, Object> toolsCapability = new HashMap<>();
+        toolsCapability.put("listChanged", false); // We don't support notifications yet
+        capabilities.put("tools", toolsCapability);
+        
+        // Enable other capabilities that might be expected
+        Map<String, Object> promptsCapability = new HashMap<>();
+        promptsCapability.put("listChanged", false);
+        capabilities.put("prompts", promptsCapability);
+        
+        Map<String, Object> resourcesCapability = new HashMap<>();
+        resourcesCapability.put("subscribe", false);
+        resourcesCapability.put("listChanged", false);
+        capabilities.put("resources", resourcesCapability);
+        
         return capabilities;
+    }
+
+    /**
+     * Handle MCP request over SSE connection.
+     * Sends response back via SSE event.
+     */
+    private void handleMcpRequestOverSse(SseEmitter emitter, Map<String, Object> request) {
+        try {
+            Map<String, Object> response = processMcpRequest(request);
+            String json = objectMapper.writeValueAsString(response);
+            
+            // Send response as SSE event
+            emitter.send(SseEmitter.event()
+                .name("message")
+                .data(json));
+        } catch (Exception e) {
+            log.error("Error handling MCP request over SSE", e);
+            try {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("jsonrpc", "2.0");
+                errorResponse.put("id", request.get("id"));
+                errorResponse.put("error", Map.of(
+                    "code", -32603,
+                    "message", "Internal error: " + e.getMessage()
+                ));
+                String json = objectMapper.writeValueAsString(errorResponse);
+                emitter.send(SseEmitter.event()
+                    .name("message")
+                    .data(json));
+            } catch (IOException ioException) {
+                log.error("Failed to send error response", ioException);
+            }
+        }
+    }
+    
+    /**
+     * Process MCP request and return response.
+     */
+    private Map<String, Object> processMcpRequest(Map<String, Object> request) {
+        log.debug("Processing MCP request: {}", request);
+        
+        String method = (String) request.get("method");
+        Object id = request.get("id");
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("jsonrpc", "2.0");
+        response.put("id", id);
+        
+        switch (method) {
+            case "initialize":
+                response.put("result", handleInitialize(request));
+                break;
+            case "tools/list":
+                response.put("result", handleToolsList());
+                break;
+            case "tools/call":
+                response.put("result", handleToolCall(request));
+                break;
+            case "ping":
+                response.put("result", Map.of("status", "pong"));
+                break;
+            default:
+                response.put("error", Map.of(
+                    "code", -32601,
+                    "message", "Method not found: " + method
+                ));
+        }
+        
+        return response;
     }
 
     private void sendSseMessage(SseEmitter emitter, String event, Object data) throws IOException {
