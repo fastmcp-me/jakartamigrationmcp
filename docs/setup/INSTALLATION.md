@@ -1,5 +1,9 @@
 # Jakarta Migration MCP Server - Installation Guide
 
+**Purpose**: This guide is for **end users** who want to install and use the Jakarta Migration MCP Server with their MCP clients (Cursor, Claude Desktop, etc.).
+
+**For Developers**: If you're developing or contributing to this project, see [MANUAL_SETUP.md](MANUAL_SETUP.md) for development environment setup.
+
 This guide covers installing and configuring the Jakarta Migration MCP Server for different MCP clients.
 
 ## Quick Install

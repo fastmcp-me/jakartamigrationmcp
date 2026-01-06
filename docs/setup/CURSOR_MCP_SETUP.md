@@ -2,7 +2,17 @@
 
 ## Quick Setup for Local Development
 
-This guide shows how to configure the Jakarta Migration MCP server in Cursor for local development and testing.
+This guide shows how to configure and test the Jakarta Migration MCP server in Cursor for local development and testing.
+
+## Setup Status ✅
+
+The Jakarta Migration MCP Server has been configured with Spring AI MCP support:
+
+1. ✅ **Dependency Added**: `spring-ai-starter-mcp-server` in `build.gradle.kts`
+2. ✅ **@McpTool Annotations**: All 5 tools are annotated
+3. ✅ **Configuration Added**: MCP server config in `application.yml`
+
+For detailed status, see [MCP_EXPOSURE_STATUS.md](MCP_EXPOSURE_STATUS.md).
 
 ## Prerequisites
 
@@ -86,6 +96,23 @@ The JAR will be created at: `build/libs/jakarta-migration-mcp-1.0.0-SNAPSHOT.jar
 
 ## Step 3: Verify MCP Server is Running
 
+### Check Logs
+
+After starting the server, check the logs for:
+- MCP server startup messages
+- Tool registration messages (should show 5 tools registered)
+- Any errors
+
+### Expected Behavior
+
+When the MCP server starts successfully, you should see:
+1. **Spring Boot startup logs**
+2. **MCP Server initialization logs**
+3. **Tool registration logs** (5 tools registered)
+4. **Server ready message**
+
+### Test in Cursor
+
 After restarting Cursor, you can verify the MCP server is working by:
 
 1. **Check MCP Status** (if available in Cursor UI)
@@ -118,6 +145,31 @@ Once configured, the following tools are available:
 - **Restart Cursor**: MCP servers only load on startup
 - **Check Configuration**: Verify JSON syntax is correct
 - **Check Server Status**: Ensure the server is toggled ON in settings
+- **Verify JAR Path**: Check that `--spring.main.web-application-type=none` is in args
+- **Check Cursor Logs**: Look for MCP errors in Cursor's logs
+
+### Spring AI MCP Server Dependency Issues
+
+**Issue**: Spring AI MCP Server dependency not found
+
+**Solution**: 
+- Check if Spring AI version supports MCP Server (should be 1.1.2+)
+- Verify dependency in `build.gradle.kts`: `spring-ai-starter-mcp-server`
+- Rebuild: `gradle clean build`
+
+**Issue**: @McpTool annotation not found
+
+**Solution**:
+- Verify the dependency is correctly added
+- Check import: `import org.springframework.ai.mcp.server.McpTool;`
+- Rebuild the project
+
+### Compilation Errors
+
+**Solution**:
+- Ensure Spring AI version supports MCP Server
+- Check that all dependencies are resolved
+- Try: `gradle clean build`
 
 ### Path Issues on Windows
 

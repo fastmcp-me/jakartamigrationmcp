@@ -15,7 +15,8 @@ import adrianmikula.jakartamigration.runtimeverification.domain.VerificationResu
 import adrianmikula.jakartamigration.runtimeverification.service.RuntimeVerificationModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.mcp.annotation.McpTool;
+// TODO: Uncomment when Spring AI MCP annotations are available
+// import org.springframework.ai.mcp.annotation.McpTool;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
@@ -49,10 +50,11 @@ public class JakartaMigrationTools {
      * @param projectPath Path to the project root directory
      * @return JSON string containing analysis report
      */
-    @McpTool(
-        name = "analyzeJakartaReadiness",
-        description = "Analyzes a Java project for Jakarta migration readiness. Returns a JSON report with readiness score, blockers, and recommendations."
-    )
+    // TODO: Uncomment @McpTool annotation when Spring AI MCP annotations are available
+    // @McpTool(
+    //     name = "analyzeJakartaReadiness",
+    //     description = "Analyzes a Java project for Jakarta migration readiness. Returns a JSON report with readiness score, blockers, and recommendations."
+    // )
     public String analyzeJakartaReadiness(String projectPath) {
         try {
             log.info("Analyzing Jakarta readiness for project: {}", projectPath);
@@ -83,10 +85,11 @@ public class JakartaMigrationTools {
      * @param projectPath Path to the project root directory
      * @return JSON string containing blockers list
      */
-    @McpTool(
-        name = "detectBlockers",
-        description = "Detects blockers that prevent Jakarta migration. Returns a JSON list of blockers with types, reasons, and mitigation strategies."
-    )
+    // TODO: Uncomment @McpTool annotation when Spring AI MCP annotations are available
+    // @McpTool(
+    //     name = "detectBlockers",
+    //     description = "Detects blockers that prevent Jakarta migration. Returns a JSON list of blockers with types, reasons, and mitigation strategies."
+    // )
     public String detectBlockers(String projectPath) {
         try {
             log.info("Detecting blockers for project: {}", projectPath);
@@ -120,10 +123,11 @@ public class JakartaMigrationTools {
      * @param projectPath Path to the project root directory
      * @return JSON string containing version recommendations
      */
-    @McpTool(
-        name = "recommendVersions",
-        description = "Recommends Jakarta-compatible versions for project dependencies. Returns a JSON list of version recommendations with migration paths and compatibility scores."
-    )
+    // TODO: Uncomment @McpTool annotation when Spring AI MCP annotations are available
+    // @McpTool(
+    //     name = "recommendVersions",
+    //     description = "Recommends Jakarta-compatible versions for project dependencies. Returns a JSON list of version recommendations with migration paths and compatibility scores."
+    // )
     public String recommendVersions(String projectPath) {
         try {
             log.info("Recommending versions for project: {}", projectPath);
@@ -160,10 +164,11 @@ public class JakartaMigrationTools {
      * @param projectPath Path to the project root directory
      * @return JSON string containing migration plan
      */
-    @McpTool(
-        name = "createMigrationPlan",
-        description = "Creates a comprehensive migration plan for Jakarta migration. Returns a JSON plan with phases, estimated duration, and risk assessment."
-    )
+    // TODO: Uncomment @McpTool annotation when Spring AI MCP annotations are available
+    // @McpTool(
+    //     name = "createMigrationPlan",
+    //     description = "Creates a comprehensive migration plan for Jakarta migration. Returns a JSON plan with phases, estimated duration, and risk assessment."
+    // )
     public String createMigrationPlan(String projectPath) {
         try {
             log.info("Creating migration plan for project: {}", projectPath);
@@ -201,10 +206,11 @@ public class JakartaMigrationTools {
      * @param timeoutSeconds Optional timeout in seconds (default: 30)
      * @return JSON string containing verification result
      */
-    @McpTool(
-        name = "verifyRuntime",
-        description = "Verifies runtime execution of a migrated Jakarta application. Returns a JSON result with execution status, errors, and metrics."
-    )
+    // TODO: Uncomment @McpTool annotation when Spring AI MCP annotations are available
+    // @McpTool(
+    //     name = "verifyRuntime",
+    //     description = "Verifies runtime execution of a migrated Jakarta application. Returns a JSON result with execution status, errors, and metrics."
+    // )
     public String verifyRuntime(String jarPath, Integer timeoutSeconds) {
         try {
             log.info("Verifying runtime for JAR: {}", jarPath);

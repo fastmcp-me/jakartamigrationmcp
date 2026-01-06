@@ -1,5 +1,9 @@
 # Manual Setup Guide
 
+**Purpose**: This guide is for **developers** who want to set up the development environment for working on the Jakarta Migration MCP Server project.
+
+**For End Users**: If you just want to install and use the MCP server, see [INSTALLATION.md](INSTALLATION.md) instead.
+
 Complete guide for manually setting up this Spring Boot template without using automated scripts.
 
 ## Prerequisites

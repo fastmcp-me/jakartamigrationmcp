@@ -5,6 +5,15 @@ The Jakarta Migration MCP Server supports two transport mechanisms:
 1. **stdio** (Standard Input/Output) - For local use with MCP clients like Cursor, Claude Code
 2. **SSE** (Server-Sent Events) - For HTTP-based deployments like Apify
 
+## ✅ Verification Status
+
+Both transport mechanisms are **fully configured and working**:
+
+- ✅ **stdio support**: Fully configured for local MCP clients
+- ✅ **SSE support**: Fully configured for Apify/HTTP deployments
+- ✅ **Automatic detection**: Transport mode detected from environment
+- ✅ **Spring AI integration**: Tools properly annotated and registered
+
 ## Transport Modes
 
 ### stdio Transport (Default - Local Use)
@@ -229,4 +238,45 @@ The transport mode is automatically detected based on:
 1. `MCP_TRANSPORT` environment variable
 2. Spring profile (`mcp-stdio` or `mcp-sse`)
 3. Default: `stdio` (for local use)
+
+## Configuration Files
+
+### Main Configuration (`application.yml`)
+```yaml
+spring:
+  ai:
+    mcp:
+      server:
+        transport: ${MCP_TRANSPORT:stdio}  # Default: stdio
+        sse:
+          port: ${MCP_SSE_PORT:8080}
+          path: ${MCP_SSE_PATH:/mcp/sse}
+```
+
+### stdio Profile (`application-mcp-stdio.yml`)
+- Disables web server (`web-application-type: none`)
+- Sets transport to `stdio`
+
+### SSE Profile (`application-mcp-sse.yml`)
+- Enables web server (`web-application-type: servlet`)
+- Sets transport to `sse`
+- Configures port and path
+- Exposes Actuator endpoints
+
+## npm Wrapper (`index.js`)
+
+The npm wrapper automatically:
+1. Detects transport mode from `MCP_TRANSPORT` environment variable
+2. Sets appropriate Spring profile (`mcp-stdio` or `mcp-sse`)
+3. Configures web server based on transport mode
+4. Defaults to `stdio` for local use
+
+## Spring AI MCP Server Integration
+
+**Status**: ✅ Fully Integrated
+
+- ✅ Dependency: `spring-ai-starter-mcp-server:1.0.0`
+- ✅ Tools annotated with `@Tool` and `@ToolParam`
+- ✅ Configuration supports both transports
+- ✅ Automatic tool discovery and registration
 

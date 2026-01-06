@@ -2,9 +2,105 @@
 
 This document lists all billable events that can be configured in your Apify dashboard for the Jakarta Migration MCP Server.
 
+## Quick Reference
+
+Use this list to quickly configure billable events in your Apify dashboard:
+
+| Event Name | Price | Description |
+|------------|-------|-------------|
+| `migration-plan-created` | $0.05 | Creates comprehensive migration plan with phases and risk assessment |
+| `runtime-verification-executed` | $0.10 | Verifies runtime execution of migrated Jakarta application |
+| `one-click-refactor-executed` | $0.25 | Executes complete Jakarta migration refactoring automatically |
+| `auto-fixes-applied` | $0.15 | Automatically fixes detected Jakarta migration issues |
+| `binary-fixes-applied` | $0.20 | Fixes Jakarta migration issues in compiled binaries/JARs |
+| `advanced-analysis-executed` | $0.10 | Deep dependency analysis with transitive conflict detection |
+
+**Free Events** (no configuration needed):
+- `analyzeJakartaReadiness` - Basic project analysis
+- `detectBlockers` - Blocker detection
+- `recommendVersions` - Version recommendations
+
+**Apify Dashboard Configuration**:
+1. Go to **Actor Settings** → **Monetization**
+2. Enable **Pay-Per-Event (PPE)**
+3. Click **"+ Add Event"** for each event above
+4. Copy-paste event name, price, and description
+5. Save configuration
+
 ## Overview
 
 The Jakarta Migration MCP Server uses **Pay-Per-Event (PPE)** billing model on Apify. Each premium feature triggers a billable event when called by an agentic AI.
+
+## Setup Guide
+
+### Prerequisites
+
+1. **Apify Account**: Sign up at https://apify.com
+2. **Actor Created**: Deploy the MCP server as an Apify Actor
+3. **Monetization Enabled**: Enable monetization in Actor settings
+
+### Step 1: Enable Monetization
+
+1. Go to your Apify Actor dashboard
+2. Navigate to **Settings** → **Monetization**
+3. Enable **Monetization**
+4. Select **Pay-Per-Event (PPE)** pricing model
+
+### Step 2: Configure Billable Events
+
+Add each billable event from the list above:
+
+1. Click **"+ Add Event"** in Apify dashboard
+2. Enter event name (exact match required - see table above)
+3. Set price (recommended prices shown in table)
+4. Add description
+
+### Step 3: Configure Environment Variables
+
+Set these in your Apify Actor environment:
+
+```bash
+# Required for billing (auto-set by Apify)
+ACTOR_ID=your-actor-id
+ACTOR_RUN_ID=auto-set-by-apify
+
+# Optional: Set spending limit
+ACTOR_MAX_TOTAL_CHARGE_USD=10.00
+
+# Apify license validation
+APIFY_VALIDATION_ENABLED=true
+APIFY_API_TOKEN=your-apify-api-token
+```
+
+### Step 4: Verify Configuration
+
+1. Deploy Actor with billing enabled
+2. Test premium features
+3. Check Apify dashboard for charges
+4. Review application logs for billing events
+
+### Application Configuration
+
+In `application.yml`:
+
+```yaml
+jakarta:
+  migration:
+    apify:
+      enabled: ${APIFY_VALIDATION_ENABLED:true}
+      api-url: ${APIFY_API_URL:https://api.apify.com/v2}
+      api-token: ${APIFY_API_TOKEN:}
+```
+
+### Environment Variables Reference
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `ACTOR_ID` | Apify Actor ID | Yes (auto-set) |
+| `ACTOR_RUN_ID` | Apify Run ID | Yes (auto-set) |
+| `ACTOR_MAX_TOTAL_CHARGE_USD` | Max spending limit | No |
+| `APIFY_VALIDATION_ENABLED` | Enable Apify validation | No (default: true) |
+| `APIFY_API_TOKEN` | Apify API token | Yes |
 
 ## Billable Events
 
@@ -277,6 +373,150 @@ DEBUG - Event counts: {migration-plan-created=1, runtime-verification-executed=2
 ### Issue: Wrong event names
 
 **Solution**: Event names must match exactly (case-sensitive) with Apify dashboard configuration
+
+## Code Integration Status
+
+✅ **Billing Service**: `ApifyBillingService` created and configured  
+✅ **Event Charging**: Integrated into premium tools  
+✅ **Automatic Detection**: Billing enabled only in Apify environment  
+✅ **Spending Limits**: Respects `ACTOR_MAX_TOTAL_CHARGE_USD`
+
+### Tools with Billing Integration
+
+| Tool | Event Name | Status |
+|------|------------|--------|
+| `createMigrationPlan` | `migration-plan-created` | ✅ Integrated |
+| `verifyRuntime` | `runtime-verification-executed` | ✅ Integrated |
+| `executeOneClickRefactor` | `one-click-refactor-executed` | ⚠️ Tool not yet implemented |
+| `autoFixIssues` | `auto-fixes-applied` | ⚠️ Tool not yet implemented |
+| Binary fixes | `binary-fixes-applied` | ⚠️ Needs integration |
+| Advanced analysis | `advanced-analysis-executed` | ⚠️ Needs integration |
+
+## How Billing Works
+
+### Automatic Billing Detection
+
+The `ApifyBillingService` automatically detects if billing should be enabled:
+
+```java
+public boolean isBillingEnabled() {
+    // Checks:
+    // 1. Apify validation enabled
+    // 2. ACTOR_ID environment variable set
+    return apifyProperties.getEnabled() && 
+           System.getenv("ACTOR_ID") != null;
+}
+```
+
+### Event Charging Flow
+
+When a premium tool is executed:
+
+1. Tool executes successfully
+2. `apifyBillingService.chargeEvent("event-name")` is called
+3. Service checks if billing is enabled
+4. Event is logged and charged via Apify platform
+5. Charge is tracked and limited by `ACTOR_MAX_TOTAL_CHARGE_USD`
+
+### Example Code
+
+```java
+@Tool(name = "createMigrationPlan")
+public String createMigrationPlan(String projectPath) {
+    // ... create plan ...
+    
+    // Charge for event (only if billing enabled)
+    apifyBillingService.chargeEvent("migration-plan-created");
+    
+    return result;
+}
+```
+
+## Testing
+
+### Local Testing
+
+Billing is automatically disabled locally (no `ACTOR_ID` set):
+
+```bash
+# No ACTOR_ID set, billing disabled
+java -jar app.jar
+```
+
+### Apify Testing
+
+1. Deploy to Apify
+2. Set `ACTOR_MAX_TOTAL_CHARGE_USD=1.00` for testing
+3. Execute premium tools via MCP client
+4. Check Apify dashboard → **Runs** → **Charges**
+
+### Verification
+
+Check logs for billing events:
+
+```
+INFO  - Charged for event: migration-plan-created (total charges: $0.05)
+INFO  - Charged for event: runtime-verification-executed (total charges: $0.15)
+```
+
+## Monitoring
+
+### Apify Dashboard
+
+Monitor in Apify dashboard:
+- **Revenue**: Total earnings
+- **Usage**: Events per period
+- **Top Events**: Most charged events
+- **User Spending**: Per-user charges
+
+### Application Logs
+
+Billing events are logged:
+```
+INFO  - Charged for event: migration-plan-created (total charges: $0.05)
+DEBUG - Event counts: {migration-plan-created=1}
+```
+
+## Troubleshooting
+
+### Events Not Being Charged
+
+**Check**:
+1. Is `ACTOR_ID` set? (should be auto-set by Apify)
+2. Is `jakarta.migration.apify.enabled=true`?
+3. Are events configured in Apify dashboard?
+4. Check application logs for errors
+
+**Solution**: Verify environment variables and Apify Actor configuration
+
+### Charges Exceeding Limits
+
+**Check**: `ACTOR_MAX_TOTAL_CHARGE_USD` value
+
+**Solution**: Set appropriate limit or increase limit
+
+### Wrong Event Names
+
+**Check**: Event names must match exactly (case-sensitive)
+
+**Solution**: Verify event names in code match Apify dashboard
+
+### Billing Disabled Unexpectedly
+
+**Check**:
+1. `APIFY_VALIDATION_ENABLED` setting
+2. `ACTOR_ID` environment variable
+3. Application logs
+
+**Solution**: Ensure Apify environment is properly configured
+
+## Best Practices
+
+1. **Set Spending Limits**: Always set `ACTOR_MAX_TOTAL_CHARGE_USD` to protect users
+2. **Clear Pricing**: Document prices in Actor description
+3. **Monitor Usage**: Track event frequency and adjust pricing
+4. **Error Handling**: Billing failures should not break functionality
+5. **Logging**: Log all billing events for debugging
 
 ## Support
 

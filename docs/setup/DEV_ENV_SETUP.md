@@ -2,6 +2,56 @@
 
 This document outlines the complete development environment setup for the Jakarta Migration MCP server project, including OpenRewrite, MCP servers, and Java development tools.
 
+## Quick Reference
+
+### ✅ What's Already Set Up
+
+1. **OpenRewrite ✅**
+   - Added to both `pom.xml` and `build.gradle.kts`
+   - Version: 8.10.0
+   - Jakarta migration recipes pre-configured
+   - Usage: `mvn rewrite:dryRun` or `./gradlew rewriteDryRun`
+
+2. **Spring AI MCP Server ✅**
+   - Dependency added (ready to use)
+   - Version: 1.1.2
+   - Usage: Add `@McpTool` annotations to create MCP tools
+
+3. **Java Development Tools ✅**
+   - Java 21: Configured via `mise` (`.mise.toml`)
+   - Gradle 8.5: Configured
+   - Maven: Available
+
+### 🚀 Quick Start: Building Your First MCP Tool
+
+1. **Create a Tool Component**:
+   ```java
+   @Component
+   public class JakartaMigrationTools {
+       @McpTool(name = "analyzeJakartaReadiness", description = "...")
+       public String analyzeReadiness(String projectPath) {
+           // Your implementation
+       }
+   }
+   ```
+
+2. **Configure MCP Server** in `application.yml` (already configured)
+
+3. **Run**: `./gradlew bootRun`
+
+### 🛠️ Useful Commands
+
+**OpenRewrite**:
+- `./gradlew rewriteDryRun` - Preview changes
+- `./gradlew rewriteRun` - Apply changes
+
+**Build & Test**:
+- `./gradlew build` - Build project
+- `./gradlew test` - Run tests
+- `./gradlew bootRun` - Run application
+
+For detailed information, see sections below.
+
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)

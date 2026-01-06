@@ -49,8 +49,8 @@ extra["rewriteSpringVersion"] = "5.10.0"
 dependencies {
     // Spring Boot Starters
     implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    // Removed: spring-boot-starter-data-jpa (not needed for MCP server)
+    // Removed: spring-boot-starter-data-redis (not needed for MCP server)
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
@@ -73,9 +73,9 @@ dependencies {
     implementation("io.github.resilience4j:resilience4j-circuitbreaker:${property("resilience4jVersion")}")
     implementation("io.github.resilience4j:resilience4j-ratelimiter:${property("resilience4jVersion")}")
 
-    // Database
-    runtimeOnly("org.postgresql:postgresql")
-    implementation("org.liquibase:liquibase-core")
+    // Database - REMOVED (not needed for MCP server)
+    // runtimeOnly("org.postgresql:postgresql")
+    // implementation("org.liquibase:liquibase-core")
 
     // Git Operations
     implementation("org.eclipse.jgit:org.eclipse.jgit:${property("jgitVersion")}")
@@ -86,11 +86,11 @@ dependencies {
 
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.testcontainers:postgresql:${property("testcontainersVersion")}")
+    // Removed: testcontainers:postgresql (not needed without database)
     testImplementation("org.testcontainers:junit-jupiter:${property("testcontainersVersion")}")
     testImplementation("org.testcontainers:testcontainers:${property("testcontainersVersion")}")
     testImplementation("io.projectreactor:reactor-test")
-    testImplementation("com.h2database:h2")
+    // Removed: h2database (not needed without database)
     testImplementation("com.squareup.okhttp3:mockwebserver:${property("mockWebServerVersion")}")
     testImplementation("org.awaitility:awaitility:${property("awaitilityVersion")}")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

@@ -1,29 +1,14 @@
 spring:
   application:
-    name: spring-react-template
+    name: jakarta-migration-mcp
   
-  # Database Configuration
-  datasource:
-    url: jdbc:postgresql://localhost:5432/template
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
-  
-  # JPA Configuration
-  jpa:
-    hibernate:
-      ddl-auto: validate  # Schema managed by Liquibase
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-  
-  # Liquibase Configuration
-  liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.xml
-    enabled: true
-    drop-first: false
+  # Database and JPA - DISABLED (not needed for MCP server)
+  # The MCP server doesn't require a database
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration
 
 # Actuator Configuration
 management:

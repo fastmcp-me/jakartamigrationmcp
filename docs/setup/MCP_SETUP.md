@@ -13,25 +13,37 @@ MCP servers extend your AI assistant's capabilities by providing:
 - **Database management** (PostgreSQL operations and migrations)
 - **Frontend development** (Storybook, React component management)
 
+## Quick Configuration Guide
+
+**How to Configure in Cursor**:
+1. Open Cursor Settings (`Ctrl+,` or `Cmd+,`)
+2. Navigate to **Features** → **MCP**
+3. Click **"+ Add New MCP Server"**
+4. Paste the configuration JSON (see sections below)
+5. Toggle each server **ON**
+6. **Restart Cursor** completely
+
+For detailed setup instructions, see the [Setup Instructions](#setup-instructions) section below.
+
 ## Quick Installation Summary
 
-To install all requested MCP servers, run:
+To install all available MCP servers, run:
 
 ```bash
-# Core servers
-npm install -g @code-index/mcp-server @aakarsh-sasi/memory-bank-mcp
+# Core servers (verified working)
+npm install -g @hayhandsome/code-index-mcp @aakarsh-sasi/memory-bank-mcp
 
-# Build tools
-npm install -g @gradle/develocity-mcp-server @antigravity/npm-plus-mcp @antigravity/spring-initializr-mcp
+# Build tools (verified alternatives)
+npm install -g mcp-maven-deps
 
-# Design tools
-npm install -g @antoinebou12/uml-mcp @playbooks/ai-diagram-prototype-generator @squirrelogic/mcp-architect
+# Design tools (verified alternatives)
+npm install -g @agiflowai/architect-mcp
 
-# Docker
-npm install -g @modelcontextprotocol/server-docker
+# Docker (verified alternative)
+npm install -g docker-mcp-server
 
-# Database
-npm install -g @henkdz/postgresql-mcp-server
+# Database (verified alternative)
+npm install -g mcp-server-postgresql
 
 # Frontend (project dependency)
 npm install --save-dev @storybook/addon-mcp
@@ -39,6 +51,8 @@ npm install --save-dev @storybook/addon-mcp
 # Python server
 pip install logic-lm-mcp-server
 ```
+
+**Note**: Some packages from earlier documentation don't exist on npm. We've listed verified alternatives above. See [Installation Results](#installation-results) for details.
 
 Then configure in Cursor Settings → Features → MCP (see complete configuration below).
 
@@ -73,10 +87,11 @@ Then configure in Cursor Settings → Features → MCP (see complete configurati
 
 **Installation**:
 ```bash
-# Install via npm
-npm install -g @code-index/mcp-server
+# Install via npm (verified package)
+npm install -g @hayhandsome/code-index-mcp
 
-# Or clone from GitHub
+# Note: @code-index/mcp-server doesn't exist on npm
+# Alternative: Clone from GitHub if needed
 git clone https://github.com/ViperJuice/Code-Index-MCP.git
 cd Code-Index-MCP
 npm install
@@ -89,7 +104,7 @@ npm run build
   "mcpServers": {
     "code-index": {
       "command": "npx",
-      "args": ["-y", "@code-index/mcp-server"],
+      "args": ["-y", "@hayhandsome/code-index-mcp"],
       "env": {
         "CODE_INDEX_PATH": "./src"
       }
@@ -163,32 +178,30 @@ npm install -g @aakarsh-sasi/memory-bank-mcp
 
 ---
 
-### 3. Maven Tools MCP Server 🛠️
+### 3. Maven Dependencies MCP Server 🛠️
 
-**Purpose**: Gradle and Maven dependency analysis
+**Purpose**: Maven dependency version checking
 
 **Benefits**:
-- Instant dependency insights (versions, vulnerabilities, age)
-- Bulk dependency operations
-- Build optimization suggestions
+- Check Maven dependency versions
+- Dependency version analysis
 - Reduces manual dependency research
 
 **Installation**:
 ```bash
-# Install via npm
-npm install -g @maven-tools/mcp-server
+# Install via npm (verified alternative)
+npm install -g mcp-maven-deps
+
+# Note: @maven-tools/mcp-server doesn't exist on npm
 ```
 
 **Configuration**:
 ```json
 {
   "mcpServers": {
-    "maven-tools": {
+    "maven-deps": {
       "command": "npx",
-      "args": ["-y", "@maven-tools/mcp-server"],
-      "env": {
-        "GRADLE_PROJECT_PATH": "."
-      }
+      "args": ["-y", "mcp-maven-deps"]
     }
   }
 }
@@ -570,7 +583,7 @@ Here's the complete configuration file for Cursor with all requested MCP servers
   "mcpServers": {
     "code-index": {
       "command": "npx",
-      "args": ["-y", "@code-index/mcp-server"],
+      "args": ["-y", "@hayhandsome/code-index-mcp"],
       "env": {
         "CODE_INDEX_PATH": "./src"
       }
@@ -619,7 +632,7 @@ Here's the complete configuration file for Cursor with all requested MCP servers
     },
     "docker": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-docker"]
+      "args": ["-y", "docker-mcp-server"]
     },
     "logic-lm": {
       "command": "python",
@@ -630,11 +643,11 @@ Here's the complete configuration file for Cursor with all requested MCP servers
     },
     "architect": {
       "command": "npx",
-      "args": ["-y", "@squirrelogic/mcp-architect"]
+      "args": ["-y", "@agiflowai/architect-mcp"]
     },
     "postgresql": {
       "command": "npx",
-      "args": ["-y", "@henkdz/postgresql-mcp-server"],
+      "args": ["-y", "mcp-server-postgresql"],
       "env": {
         "POSTGRES_HOST": "localhost",
         "POSTGRES_PORT": "5432",
@@ -1111,5 +1124,42 @@ chmod +x index.js
 
 ---
 
-**Last Updated**: 2025-01-27
+## Installation Results Summary
+
+**Date**: 2026-01-05  
+**Total Servers Attempted**: 11  
+**Successfully Installed**: 7 (64%)  
+**Working (Tested)**: 1 (Semgrep)  
+**Needs Configuration**: 6  
+**Has Issues**: 1 (Memory Bank - path resolution bug)  
+**Not Found on npm**: 4
+
+### Verified Working Servers
+
+1. **Semgrep MCP** - ✅ Working (security scanning)
+2. **Code Index MCP** (`@hayhandsome/code-index-mcp`) - ✅ Installed, needs configuration
+3. **Memory Bank MCP** (`@aakarsh-sasi/memory-bank-mcp`) - ✅ Installed, has path bug
+4. **Maven Dependencies MCP** (`mcp-maven-deps`) - ✅ Installed, needs configuration
+5. **Docker MCP** (`docker-mcp-server`) - ✅ Installed, needs configuration
+6. **Architect MCP** (`@agiflowai/architect-mcp`) - ✅ Installed, needs configuration
+7. **PostgreSQL MCP** (`mcp-server-postgresql`) - ✅ Installed, needs configuration
+
+### Package Name Corrections
+
+Many packages listed in earlier versions of this document don't exist on npm. Use these verified alternatives:
+
+| Original Package | Verified Alternative |
+|-----------------|---------------------|
+| `@code-index/mcp-server` | `@hayhandsome/code-index-mcp` ✅ |
+| `@maven-tools/mcp-server` | `mcp-maven-deps` ✅ |
+| `@modelcontextprotocol/server-docker` | `docker-mcp-server` ✅ |
+| `@squirrelogic/mcp-architect` | `@agiflowai/architect-mcp` ✅ |
+| `@henkdz/postgresql-mcp-server` | `mcp-server-postgresql` ✅ |
+| `@antigravity/spring-initializr-mcp` | ❌ Not found (may need source build) |
+| `@antoinebou12/uml-mcp` | ❌ Not found (may need source build) |
+| `@antigravity/npm-plus-mcp` | ❌ Not found |
+
+For detailed test results, see [MCP_TEST_RESULTS.md](MCP_TEST_RESULTS.md).
+
+**Last Updated**: 2026-01-27
 
