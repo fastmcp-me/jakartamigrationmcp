@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
@@ -28,14 +29,15 @@ class StripeLicenseServiceTest {
 
     @BeforeEach
     void setUp() {
-        when(properties.getEnabled()).thenReturn(true);
-        when(properties.getApiUrl()).thenReturn("https://api.stripe.com/v1");
-        when(properties.getCacheTtlSeconds()).thenReturn(3600L);
-        when(properties.getTimeoutSeconds()).thenReturn(5);
-        when(properties.getAllowOfflineValidation()).thenReturn(true);
-        when(properties.getLicenseKeyPrefix()).thenReturn("stripe_");
-        when(properties.getProductIdPremium()).thenReturn("");
-        when(properties.getProductIdEnterprise()).thenReturn("");
+        // Use lenient stubbing for properties that may not be used in all tests
+        lenient().when(properties.getEnabled()).thenReturn(true);
+        lenient().when(properties.getApiUrl()).thenReturn("https://api.stripe.com/v1");
+        lenient().when(properties.getCacheTtlSeconds()).thenReturn(3600L);
+        lenient().when(properties.getTimeoutSeconds()).thenReturn(5);
+        lenient().when(properties.getAllowOfflineValidation()).thenReturn(true);
+        lenient().when(properties.getLicenseKeyPrefix()).thenReturn("stripe_");
+        lenient().when(properties.getProductIdPremium()).thenReturn("");
+        lenient().when(properties.getProductIdEnterprise()).thenReturn("");
 
         service = new StripeLicenseService(properties, stripeWebClient);
     }

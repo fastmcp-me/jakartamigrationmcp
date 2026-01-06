@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.Arrays;
@@ -23,13 +24,20 @@ import java.util.Arrays;
  * trying to initialize database connections, which causes startup failures when no database
  * is available. This is essential for MCP server operation.
  */
-@SpringBootApplication(exclude = {
-    DataSourceAutoConfiguration.class,
-    JdbcTemplateAutoConfiguration.class,
-    HibernateJpaAutoConfiguration.class,
-    LiquibaseAutoConfiguration.class,
-    TransactionAutoConfiguration.class
-})
+@SpringBootApplication(
+    exclude = {
+        DataSourceAutoConfiguration.class,
+        JdbcTemplateAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class,
+        LiquibaseAutoConfiguration.class,
+        TransactionAutoConfiguration.class,
+        JpaRepositoriesAutoConfiguration.class  // CRITICAL: Prevents Spring Data JPA repository scanning
+    },
+    scanBasePackages = {
+        "adrianmikula.jakartamigration",  // CRITICAL: Include Jakarta Migration packages for MCP tools
+        "adrianmikula.projectname"        // Include projectname packages
+    }
+)
 @EnableScheduling
 public class ProjectNameApplication {
 

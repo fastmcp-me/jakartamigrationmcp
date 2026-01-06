@@ -15,12 +15,10 @@ import adrianmikula.jakartamigration.runtimeverification.domain.VerificationResu
 import adrianmikula.jakartamigration.runtimeverification.service.RuntimeVerificationModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-// ISSUE FOUND: Spring AI 1.1.2's spring-ai-mcp-annotations module wraps org.springaicommunity:mcp-annotations
-// but does NOT re-export the annotation classes in the org.springframework.ai.mcp.annotation package.
-// The actual annotations are in the org.springaicommunity.mcp.annotations package.
-// This is a mismatch between the documentation and the actual implementation in 1.1.2.
-import org.springaicommunity.mcp.annotations.McpTool;
-import org.springaicommunity.mcp.annotations.McpToolParam;
+// CORRECTED: The annotations are in org.springaicommunity.mcp.annotation (SINGULAR, not plural)
+// Verified by inspecting the JAR: org/springaicommunity/mcp/annotation/McpTool.class
+import org.springaicommunity.mcp.annotation.McpTool;
+import org.springaicommunity.mcp.annotation.McpToolParam;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;

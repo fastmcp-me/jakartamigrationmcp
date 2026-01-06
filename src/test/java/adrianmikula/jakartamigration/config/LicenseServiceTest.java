@@ -60,7 +60,7 @@ class LicenseServiceTest {
 
     @Test
     void shouldUseApifyValidationWhenAvailable() {
-        when(stripeLicenseService.validateLicense(anyString())).thenReturn(null);
+        // Note: stripeLicenseService is not called for non-Stripe keys, so we don't stub it
         when(apifyLicenseService.validateLicense(anyString())).thenReturn(FeatureFlagsProperties.LicenseTier.PREMIUM);
         
         FeatureFlagsProperties.LicenseTier tier = licenseService.validateLicense("apify_api_token_123");

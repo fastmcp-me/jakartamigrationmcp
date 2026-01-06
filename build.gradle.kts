@@ -70,7 +70,7 @@ dependencies {
     implementation("org.springframework.ai:spring-ai-mcp-annotations:${property("springAiVersion")}")
     
     // Spring AI Community MCP Annotations - required for @McpTool and @McpToolParam
-    // The annotations are in org.springaicommunity.mcp.annotations package
+    // The annotations are in org.springaicommunity.mcp.annotation package (SINGULAR, not plural)
     // This is required for the annotation classes to be available at compile time
     implementation("org.springaicommunity:mcp-annotations:0.8.0")
     
@@ -138,6 +138,8 @@ sourceSets {
             exclude("**/coderefactoring/service/ChangeTrackerTest.java")
             exclude("**/coderefactoring/service/ProgressTrackerTest.java")
             exclude("**/coderefactoring/MigrationPlanTest.java")
+            // Exclude all template/example tests in projectname package
+            exclude("**/projectname/**")
         }
     }
 }

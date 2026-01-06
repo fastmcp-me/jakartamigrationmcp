@@ -13,7 +13,7 @@ After researching open-source Java MCP server implementations, we've identified 
 **Key Patterns**:
 - Uses `@Component` annotation on tool classes
 - All methods return simple types (`String`, `Integer`, `Boolean`) or POJOs
-- Uses `@McpTool` and `@McpToolParam` from `org.springaicommunity.mcp.annotations` package
+- Uses `@McpTool` and `@McpToolParam` from `org.springaicommunity.mcp.annotation` package (SINGULAR, not plural)
 - Configuration uses `type: SYNC` for synchronous methods
 - No database dependencies - pure MCP server
 - Minimal Spring Boot configuration
@@ -98,7 +98,7 @@ of type [...] is not eligible for getting processed by all BeanPostProcessors
 | Auto-Configuration Exclusions | Minimal, focused | Excluded but not working | ❌ **ISSUE** |
 | Return Types | Simple (String, primitives) | Simple (String) | ✅ **OK** |
 | Component Annotation | `@Component` | `@Component` | ✅ **OK** |
-| Annotation Package | `org.springaicommunity.mcp.annotations` | `org.springaicommunity.mcp.annotations` | ✅ **OK** |
+| Annotation Package | `org.springaicommunity.mcp.annotation` (singular) | `org.springaicommunity.mcp.annotation` (singular) | ✅ **OK** |
 | Configuration Type | `SYNC` | `SYNC` | ✅ **OK** |
 | Logging to STDOUT | None (all to STDERR) | Configured correctly | ✅ **OK** |
 
@@ -164,4 +164,5 @@ of type [...] is not eligible for getting processed by all BeanPostProcessors
 - [Spring AI Community MCP Annotations](https://github.com/spring-ai-community/mcp-annotations)
 - [Spring AI MCP Documentation](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-annotations-overview.html)
 - [MCP Declarative Java SDK](https://github.com/codeboyzhou/mcp-declarative-java-sdk)
+
 

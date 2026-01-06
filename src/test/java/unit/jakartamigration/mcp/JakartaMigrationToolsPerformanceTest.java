@@ -7,6 +7,8 @@ import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyAnalys
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyGraphBuilder;
 import adrianmikula.jakartamigration.mcp.JakartaMigrationTools;
 import adrianmikula.jakartamigration.runtimeverification.service.RuntimeVerificationModule;
+import adrianmikula.jakartamigration.config.FeatureFlagsService;
+import adrianmikula.jakartamigration.config.ApifyBillingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,6 +55,12 @@ class JakartaMigrationToolsPerformanceTest {
 
     @Mock
     private RuntimeVerificationModule runtimeVerificationModule;
+
+    @Mock
+    private FeatureFlagsService featureFlagsService;
+
+    @Mock
+    private ApifyBillingService apifyBillingService;
 
     @InjectMocks
     private JakartaMigrationTools tools;

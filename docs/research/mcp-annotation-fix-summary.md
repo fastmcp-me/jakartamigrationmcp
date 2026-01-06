@@ -101,3 +101,4 @@ After applying these fixes, verify:
 - [Research Document](./mcp-annotation-research.md) - Detailed comparison with working examples
 - [Annotation Problems Guide](../standards/annotation-problems.md) - Configuration best practices
 
+

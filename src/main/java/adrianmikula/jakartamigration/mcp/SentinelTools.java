@@ -1,8 +1,8 @@
 package adrianmikula.jakartamigration.mcp;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springaicommunity.mcp.annotations.McpTool;
-import org.springaicommunity.mcp.annotations.McpToolParam;
+import org.springaicommunity.mcp.annotation.McpTool;
+import org.springaicommunity.mcp.annotation.McpToolParam;
 import org.springframework.stereotype.Component;
 
 /**

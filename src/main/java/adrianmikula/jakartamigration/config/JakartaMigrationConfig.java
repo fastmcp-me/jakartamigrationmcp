@@ -3,6 +3,8 @@ package adrianmikula.jakartamigration.config;
 import adrianmikula.jakartamigration.coderefactoring.service.MigrationPlanner;
 import adrianmikula.jakartamigration.coderefactoring.service.RecipeLibrary;
 import adrianmikula.jakartamigration.coderefactoring.service.RefactoringEngine;
+import adrianmikula.jakartamigration.coderefactoring.service.ChangeTracker;
+import adrianmikula.jakartamigration.coderefactoring.service.ProgressTracker;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyAnalysisModule;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyGraphBuilder;
 import adrianmikula.jakartamigration.dependencyanalysis.service.NamespaceClassifier;
@@ -13,18 +15,17 @@ import adrianmikula.jakartamigration.runtimeverification.service.RuntimeVerifica
 import adrianmikula.jakartamigration.runtimeverification.service.impl.RuntimeVerificationModuleImpl;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import java.time.Duration;
 
 /**
  * Configuration for Jakarta Migration modules.
  * Wires up all the service implementations.
+ * 
+ * NOTE: Component scanning is handled by @SpringBootApplication(scanBasePackages = {...})
+ * in ProjectNameApplication. This @ComponentScan was redundant and could cause conflicts.
  */
 @Configuration
-@ComponentScan(basePackages = "adrianmikula.jakartamigration")
 @EnableConfigurationProperties({
     FeatureFlagsProperties.class, 
     ApifyLicenseProperties.class,
@@ -107,6 +108,16 @@ public class JakartaMigrationConfig {
     @Bean
     public RefactoringEngine refactoringEngine() {
         return new RefactoringEngine();
+    }
+    
+    @Bean
+    public ChangeTracker changeTracker() {
+        return new ChangeTracker();
+    }
+    
+    @Bean
+    public ProgressTracker progressTracker() {
+        return new ProgressTracker();
     }
 }
 

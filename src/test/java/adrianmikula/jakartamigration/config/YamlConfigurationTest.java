@@ -1,5 +1,6 @@
 package adrianmikula.jakartamigration.config;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - Profile-specific configurations work
  * - Environment variable substitution works
  */
-@SpringBootTest
+@SpringBootTest(classes = adrianmikula.projectname.ProjectNameApplication.class)
 class YamlConfigurationTest {
 
     @Autowired(required = false)
@@ -66,43 +67,49 @@ class YamlConfigurationTest {
     /**
      * Test that mcp-stdio profile loads correctly.
      */
-    @Test
+    @Nested
     @ActiveProfiles("mcp-stdio")
-    void shouldLoadStdioProfileConfiguration() {
-        assertThat(featureFlagsProperties).isNotNull();
-        assertThat(apifyLicenseProperties).isNotNull();
-        assertThat(stripeLicenseProperties).isNotNull();
+    class StdioProfileTest {
+        @Test
+        void shouldLoadStdioProfileConfiguration() {
+            assertThat(featureFlagsProperties).isNotNull();
+            assertThat(apifyLicenseProperties).isNotNull();
+            assertThat(stripeLicenseProperties).isNotNull();
 
-        // Verify that stdio profile doesn't break configuration loading
-        assertThat(featureFlagsProperties.getEnabled()).isTrue();
-        assertThat(apifyLicenseProperties.getApiUrl())
-            .isEqualTo("https://api.apify.com/v2");
-        assertThat(stripeLicenseProperties.getApiUrl())
-            .isEqualTo("https://api.stripe.com/v1");
+            // Verify that stdio profile doesn't break configuration loading
+            assertThat(featureFlagsProperties.getEnabled()).isTrue();
+            assertThat(apifyLicenseProperties.getApiUrl())
+                .isEqualTo("https://api.apify.com/v2");
+            assertThat(stripeLicenseProperties.getApiUrl())
+                .isEqualTo("https://api.stripe.com/v1");
+        }
     }
 
     /**
      * Test that mcp-sse profile loads correctly.
      */
-    @Test
+    @Nested
     @ActiveProfiles("mcp-sse")
-    void shouldLoadSseProfileConfiguration() {
-        assertThat(featureFlagsProperties).isNotNull();
-        assertThat(apifyLicenseProperties).isNotNull();
-        assertThat(stripeLicenseProperties).isNotNull();
+    class SseProfileTest {
+        @Test
+        void shouldLoadSseProfileConfiguration() {
+            assertThat(featureFlagsProperties).isNotNull();
+            assertThat(apifyLicenseProperties).isNotNull();
+            assertThat(stripeLicenseProperties).isNotNull();
 
-        // Verify that SSE profile doesn't break configuration loading
-        assertThat(featureFlagsProperties.getEnabled()).isTrue();
-        assertThat(apifyLicenseProperties.getApiUrl())
-            .isEqualTo("https://api.apify.com/v2");
-        assertThat(stripeLicenseProperties.getApiUrl())
-            .isEqualTo("https://api.stripe.com/v1");
+            // Verify that SSE profile doesn't break configuration loading
+            assertThat(featureFlagsProperties.getEnabled()).isTrue();
+            assertThat(apifyLicenseProperties.getApiUrl())
+                .isEqualTo("https://api.apify.com/v2");
+            assertThat(stripeLicenseProperties.getApiUrl())
+                .isEqualTo("https://api.stripe.com/v1");
+        }
     }
 
     /**
      * Test that environment variable substitution works.
      */
-    @Test
+    @Nested
     @TestPropertySource(properties = {
         "jakarta.migration.feature-flags.enabled=false",
         "jakarta.migration.feature-flags.default-tier=PREMIUM",
@@ -119,91 +126,106 @@ class YamlConfigurationTest {
         "jakarta.migration.stripe.timeout-seconds=10",
         "jakarta.migration.stripe.license-key-prefix=test_"
     })
-    void shouldLoadConfigurationFromProperties() {
-        assertThat(featureFlagsProperties).isNotNull();
-        assertThat(apifyLicenseProperties).isNotNull();
-        assertThat(stripeLicenseProperties).isNotNull();
+    class PropertiesOverrideTest {
+        @Test
+        void shouldLoadConfigurationFromProperties() {
+            assertThat(featureFlagsProperties).isNotNull();
+            assertThat(apifyLicenseProperties).isNotNull();
+            assertThat(stripeLicenseProperties).isNotNull();
 
-        // Verify FeatureFlagsProperties overrides
-        assertThat(featureFlagsProperties.getEnabled()).isFalse();
-        assertThat(featureFlagsProperties.getDefaultTier())
-            .isEqualTo(FeatureFlagsProperties.LicenseTier.PREMIUM);
-        assertThat(featureFlagsProperties.getLicenseKey()).isEqualTo("test-license-key");
+            // Verify FeatureFlagsProperties overrides
+            assertThat(featureFlagsProperties.getEnabled()).isFalse();
+            assertThat(featureFlagsProperties.getDefaultTier())
+                .isEqualTo(FeatureFlagsProperties.LicenseTier.PREMIUM);
+            assertThat(featureFlagsProperties.getLicenseKey()).isEqualTo("test-license-key");
 
-        // Verify ApifyLicenseProperties overrides
-        assertThat(apifyLicenseProperties.getEnabled()).isFalse();
-        assertThat(apifyLicenseProperties.getApiUrl())
-            .isEqualTo("https://test.apify.com/v2");
-        assertThat(apifyLicenseProperties.getApiToken()).isEqualTo("test-apify-token");
-        assertThat(apifyLicenseProperties.getCacheTtlSeconds()).isEqualTo(7200L);
-        assertThat(apifyLicenseProperties.getTimeoutSeconds()).isEqualTo(10);
+            // Verify ApifyLicenseProperties overrides
+            assertThat(apifyLicenseProperties.getEnabled()).isFalse();
+            assertThat(apifyLicenseProperties.getApiUrl())
+                .isEqualTo("https://test.apify.com/v2");
+            assertThat(apifyLicenseProperties.getApiToken()).isEqualTo("test-apify-token");
+            assertThat(apifyLicenseProperties.getCacheTtlSeconds()).isEqualTo(7200L);
+            assertThat(apifyLicenseProperties.getTimeoutSeconds()).isEqualTo(10);
 
-        // Verify StripeLicenseProperties overrides
-        assertThat(stripeLicenseProperties.getEnabled()).isFalse();
-        assertThat(stripeLicenseProperties.getApiUrl())
-            .isEqualTo("https://test.stripe.com/v1");
-        assertThat(stripeLicenseProperties.getSecretKey()).isEqualTo("test-stripe-key");
-        assertThat(stripeLicenseProperties.getCacheTtlSeconds()).isEqualTo(7200L);
-        assertThat(stripeLicenseProperties.getTimeoutSeconds()).isEqualTo(10);
-        assertThat(stripeLicenseProperties.getLicenseKeyPrefix()).isEqualTo("test_");
+            // Verify StripeLicenseProperties overrides
+            assertThat(stripeLicenseProperties.getEnabled()).isFalse();
+            assertThat(stripeLicenseProperties.getApiUrl())
+                .isEqualTo("https://test.stripe.com/v1");
+            assertThat(stripeLicenseProperties.getSecretKey()).isEqualTo("test-stripe-key");
+            assertThat(stripeLicenseProperties.getCacheTtlSeconds()).isEqualTo(7200L);
+            assertThat(stripeLicenseProperties.getTimeoutSeconds()).isEqualTo(10);
+            assertThat(stripeLicenseProperties.getLicenseKeyPrefix()).isEqualTo("test_");
+        }
     }
 
     /**
      * Test that feature overrides work correctly.
      */
-    @Test
+    @Nested
     @TestPropertySource(properties = {
         "jakarta.migration.feature-flags.features.auto-fixes=true",
         "jakarta.migration.feature-flags.features.one-click-refactor=false"
     })
-    void shouldLoadFeatureOverrides() {
-        assertThat(featureFlagsProperties).isNotNull();
-        assertThat(featureFlagsProperties.getFeatures()).isNotNull();
-        assertThat(featureFlagsProperties.getFeatures().get("auto-fixes")).isTrue();
-        assertThat(featureFlagsProperties.getFeatures().get("one-click-refactor")).isFalse();
+    class FeatureOverridesTest {
+        @Test
+        void shouldLoadFeatureOverrides() {
+            assertThat(featureFlagsProperties).isNotNull();
+            assertThat(featureFlagsProperties.getFeatures()).isNotNull();
+            assertThat(featureFlagsProperties.getFeatures().get("auto-fixes")).isTrue();
+            assertThat(featureFlagsProperties.getFeatures().get("one-click-refactor")).isFalse();
+        }
     }
 
     /**
      * Test that Stripe price ID mappings work correctly.
      */
-    @Test
+    @Nested
     @TestPropertySource(properties = {
         "jakarta.migration.stripe.product-id-premium=prod_premium",
         "jakarta.migration.stripe.product-id-enterprise=prod_enterprise",
         "jakarta.migration.stripe.price-id-to-tier.price_123=PREMIUM",
         "jakarta.migration.stripe.price-id-to-tier.price_456=ENTERPRISE"
     })
-    void shouldLoadStripePriceIdMappings() {
-        assertThat(stripeLicenseProperties).isNotNull();
-        assertThat(stripeLicenseProperties.getProductIdPremium()).isEqualTo("prod_premium");
-        assertThat(stripeLicenseProperties.getProductIdEnterprise()).isEqualTo("prod_enterprise");
-        assertThat(stripeLicenseProperties.getPriceIdToTier()).isNotNull();
-        assertThat(stripeLicenseProperties.getPriceIdToTier().get("price_123")).isEqualTo("PREMIUM");
-        assertThat(stripeLicenseProperties.getPriceIdToTier().get("price_456")).isEqualTo("ENTERPRISE");
+    class StripePriceIdMappingsTest {
+        @Test
+        void shouldLoadStripePriceIdMappings() {
+            assertThat(stripeLicenseProperties).isNotNull();
+            assertThat(stripeLicenseProperties.getProductIdPremium()).isEqualTo("prod_premium");
+            assertThat(stripeLicenseProperties.getProductIdEnterprise()).isEqualTo("prod_enterprise");
+            assertThat(stripeLicenseProperties.getPriceIdToTier()).isNotNull();
+            assertThat(stripeLicenseProperties.getPriceIdToTier().get("price_123")).isEqualTo("PREMIUM");
+            assertThat(stripeLicenseProperties.getPriceIdToTier().get("price_456")).isEqualTo("ENTERPRISE");
+        }
     }
 
     /**
      * Test that Apify actor ID is loaded correctly.
      */
-    @Test
+    @Nested
     @TestPropertySource(properties = {
         "jakarta.migration.apify.actor-id=test-actor-id"
     })
-    void shouldLoadApifyActorId() {
-        assertThat(apifyLicenseProperties).isNotNull();
-        assertThat(apifyLicenseProperties.getActorId()).isEqualTo("test-actor-id");
+    class ApifyActorIdTest {
+        @Test
+        void shouldLoadApifyActorId() {
+            assertThat(apifyLicenseProperties).isNotNull();
+            assertThat(apifyLicenseProperties.getActorId()).isEqualTo("test-actor-id");
+        }
     }
 
     /**
      * Test that Stripe webhook secret is loaded correctly.
      */
-    @Test
+    @Nested
     @TestPropertySource(properties = {
         "jakarta.migration.stripe.webhook-secret=test-webhook-secret"
     })
-    void shouldLoadStripeWebhookSecret() {
-        assertThat(stripeLicenseProperties).isNotNull();
-        assertThat(stripeLicenseProperties.getWebhookSecret()).isEqualTo("test-webhook-secret");
+    class StripeWebhookSecretTest {
+        @Test
+        void shouldLoadStripeWebhookSecret() {
+            assertThat(stripeLicenseProperties).isNotNull();
+            assertThat(stripeLicenseProperties.getWebhookSecret()).isEqualTo("test-webhook-secret");
+        }
     }
 }
 

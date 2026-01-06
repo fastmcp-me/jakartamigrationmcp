@@ -14,6 +14,8 @@ import adrianmikula.jakartamigration.runtimeverification.domain.VerificationStat
 import adrianmikula.jakartamigration.runtimeverification.domain.ExecutionMetrics;
 import adrianmikula.jakartamigration.runtimeverification.domain.ErrorAnalysis;
 import adrianmikula.jakartamigration.runtimeverification.service.RuntimeVerificationModule;
+import adrianmikula.jakartamigration.config.FeatureFlagsService;
+import adrianmikula.jakartamigration.config.ApifyBillingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,6 +57,12 @@ class JakartaMigrationToolsTest {
 
     @Mock
     private RuntimeVerificationModule runtimeVerificationModule;
+
+    @Mock
+    private FeatureFlagsService featureFlagsService;
+
+    @Mock
+    private ApifyBillingService apifyBillingService;
 
     @InjectMocks
     private JakartaMigrationTools tools;
