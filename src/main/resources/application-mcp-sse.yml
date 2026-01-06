@@ -25,3 +25,11 @@ management:
     health:
       show-details: always
 
+# Logging Configuration for SSE mode
+# Use INFO level to see Tomcat startup messages
+logging:
+  level:
+    root: INFO  # INFO level to see Tomcat startup messages
+    org.springframework.boot.web.embedded.tomcat: INFO  # Tomcat startup messages
+    org.springframework.ai.mcp: DEBUG  # MCP debug logging
+

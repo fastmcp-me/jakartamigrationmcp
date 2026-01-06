@@ -1,0 +1,285 @@
+package adrianmikula.jakartamigration.mcp;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.*;
+
+/**
+ * Custom SSE endpoint controller for MCP protocol.
+ * 
+ * This is a workaround for Spring AI MCP webmvc starter not registering SSE endpoints.
+ * Implements the MCP protocol over SSE for Apify deployment.
+ * 
+ * Reference: https://modelcontextprotocol.io/docs/specification/transport
+ */
+@RestController
+@RequestMapping("/mcp")
+@RequiredArgsConstructor
+@Slf4j
+public class McpSseController {
+
+    private final JakartaMigrationTools jakartaMigrationTools;
+    private final SentinelTools sentinelTools;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    @Value("${spring.ai.mcp.server.name:jakarta-migration-mcp}")
+    private String serverName;
+    
+    @Value("${spring.ai.mcp.server.version:1.0.0-SNAPSHOT}")
+    private String serverVersion;
+
+    /**
+     * SSE endpoint for MCP protocol.
+     * 
+     * Apify will connect to this endpoint to communicate with the MCP server.
+     */
+    @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter sseEndpoint() {
+        log.info("SSE connection established for MCP server");
+        
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        
+        // Send initial connection message
+        try {
+            sendSseMessage(emitter, "connected", Map.of("status", "ready"));
+        } catch (IOException e) {
+            log.error("Failed to send initial SSE message", e);
+            emitter.completeWithError(e);
+            return emitter;
+        }
+        
+        // Handle connection lifecycle
+        emitter.onCompletion(() -> log.info("SSE connection completed"));
+        emitter.onTimeout(() -> {
+            log.warn("SSE connection timed out");
+            emitter.complete();
+        });
+        emitter.onError((ex) -> log.error("SSE connection error", ex));
+        
+        return emitter;
+    }
+
+    /**
+     * Handle MCP JSON-RPC requests via POST.
+     * 
+     * This endpoint accepts MCP protocol messages and routes them to the appropriate handlers.
+     */
+    @PostMapping(value = "/sse", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> handleMcpRequest(@RequestBody Map<String, Object> request) {
+        log.debug("Received MCP request: {}", request);
+        
+        try {
+            String method = (String) request.get("method");
+            Object id = request.get("id");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("jsonrpc", "2.0");
+            response.put("id", id);
+            
+            switch (method) {
+                case "initialize":
+                    response.put("result", handleInitialize(request));
+                    break;
+                case "tools/list":
+                    response.put("result", handleToolsList());
+                    break;
+                case "tools/call":
+                    response.put("result", handleToolCall(request));
+                    break;
+                case "ping":
+                    response.put("result", Map.of("status", "pong"));
+                    break;
+                default:
+                    response.put("error", Map.of(
+                        "code", -32601,
+                        "message", "Method not found: " + method
+                    ));
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error handling MCP request", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("jsonrpc", "2.0");
+            errorResponse.put("id", request.get("id"));
+            errorResponse.put("error", Map.of(
+                "code", -32603,
+                "message", "Internal error: " + e.getMessage()
+            ));
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    private Map<String, Object> handleInitialize(Map<String, Object> request) {
+        log.info("Handling initialize request");
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("protocolVersion", "2024-11-05");
+        result.put("capabilities", getServerCapabilities());
+        result.put("serverInfo", Map.of(
+            "name", serverName,
+            "version", serverVersion
+        ));
+        
+        return result;
+    }
+
+    private Map<String, Object> handleToolsList() {
+        log.info("Handling tools/list request");
+        
+        List<Map<String, Object>> tools = new ArrayList<>();
+        
+        // Get tools from JakartaMigrationTools
+        tools.addAll(getToolsFromClass(jakartaMigrationTools));
+        
+        // Get tools from SentinelTools
+        tools.addAll(getToolsFromClass(sentinelTools));
+        
+        return Map.of("tools", tools);
+    }
+    
+    private List<Map<String, Object>> getToolsFromClass(Object toolClass) {
+        List<Map<String, Object>> tools = new ArrayList<>();
+        
+        for (Method method : toolClass.getClass().getDeclaredMethods()) {
+            org.springaicommunity.mcp.annotation.McpTool annotation = 
+                method.getAnnotation(org.springaicommunity.mcp.annotation.McpTool.class);
+            
+            if (annotation != null) {
+                Map<String, Object> toolMap = new HashMap<>();
+                toolMap.put("name", annotation.name());
+                toolMap.put("description", annotation.description());
+                
+                // Build input schema from method parameters
+                Map<String, Object> inputSchema = new HashMap<>();
+                inputSchema.put("type", "object");
+                Map<String, Object> properties = new HashMap<>();
+                
+                for (int i = 0; i < method.getParameterCount(); i++) {
+                    java.lang.reflect.Parameter param = method.getParameters()[i];
+                    org.springaicommunity.mcp.annotation.McpToolParam paramAnnotation = 
+                        param.getAnnotation(org.springaicommunity.mcp.annotation.McpToolParam.class);
+                    
+                    if (paramAnnotation != null) {
+                        Map<String, Object> prop = new HashMap<>();
+                        prop.put("type", getJsonType(param.getType()));
+                        prop.put("description", paramAnnotation.description());
+                        properties.put(param.getName(), prop);
+                    }
+                }
+                
+                inputSchema.put("properties", properties);
+                toolMap.put("inputSchema", inputSchema);
+                
+                tools.add(toolMap);
+            }
+        }
+        
+        return tools;
+    }
+    
+    private String getJsonType(Class<?> type) {
+        if (type == String.class) return "string";
+        if (type == Integer.class || type == int.class) return "integer";
+        if (type == Boolean.class || type == boolean.class) return "boolean";
+        if (type == Double.class || type == double.class || type == Float.class || type == float.class) return "number";
+        return "string"; // default
+    }
+
+    private Map<String, Object> handleToolCall(Map<String, Object> request) {
+        log.info("Handling tools/call request");
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> params = (Map<String, Object>) request.get("params");
+        String toolName = (String) params.get("name");
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> arguments = (Map<String, Object>) params.get("arguments");
+        
+        try {
+            String result = executeTool(toolName, arguments);
+            return Map.of(
+                "content", List.of(Map.of(
+                    "type", "text",
+                    "text", result
+                ))
+            );
+        } catch (Exception e) {
+            log.error("Error executing tool: " + toolName, e);
+            throw new RuntimeException("Tool execution failed: " + e.getMessage(), e);
+        }
+    }
+    
+    private String executeTool(String toolName, Map<String, Object> arguments) throws Exception {
+        // Try JakartaMigrationTools first
+        for (Method method : jakartaMigrationTools.getClass().getDeclaredMethods()) {
+            org.springaicommunity.mcp.annotation.McpTool annotation = 
+                method.getAnnotation(org.springaicommunity.mcp.annotation.McpTool.class);
+            
+            if (annotation != null && annotation.name().equals(toolName)) {
+                return invokeTool(method, jakartaMigrationTools, arguments);
+            }
+        }
+        
+        // Try SentinelTools
+        for (Method method : sentinelTools.getClass().getDeclaredMethods()) {
+            org.springaicommunity.mcp.annotation.McpTool annotation = 
+                method.getAnnotation(org.springaicommunity.mcp.annotation.McpTool.class);
+            
+            if (annotation != null && annotation.name().equals(toolName)) {
+                return invokeTool(method, sentinelTools, arguments);
+            }
+        }
+        
+        throw new IllegalArgumentException("Tool not found: " + toolName);
+    }
+    
+    private String invokeTool(Method method, Object instance, Map<String, Object> arguments) throws Exception {
+        Object[] params = new Object[method.getParameterCount()];
+        java.lang.reflect.Parameter[] methodParams = method.getParameters();
+        
+        for (int i = 0; i < methodParams.length; i++) {
+            String paramName = methodParams[i].getName();
+            Object value = arguments.get(paramName);
+            
+            // Convert to appropriate type
+            Class<?> paramType = methodParams[i].getType();
+            if (value == null) {
+                params[i] = null;
+            } else if (paramType == String.class) {
+                params[i] = value.toString();
+            } else if (paramType == Integer.class || paramType == int.class) {
+                params[i] = value instanceof Number ? ((Number) value).intValue() : Integer.parseInt(value.toString());
+            } else {
+                params[i] = value;
+            }
+        }
+        
+        Object result = method.invoke(instance, params);
+        return result != null ? result.toString() : "";
+    }
+
+    private Map<String, Object> getServerCapabilities() {
+        Map<String, Object> capabilities = new HashMap<>();
+        capabilities.put("tools", Map.of());
+        return capabilities;
+    }
+
+    private void sendSseMessage(SseEmitter emitter, String event, Object data) throws IOException {
+        String json = objectMapper.writeValueAsString(data);
+        emitter.send(SseEmitter.event()
+            .name(event)
+            .data(json));
+    }
+}
+
