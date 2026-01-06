@@ -246,23 +246,13 @@ public class ApacheTomcatMigrationTool {
      * This is called lazily on first use, not at construction time, to prevent startup delays.
      * 
      * Checks:
-     * 1. JAKARTA_MIGRATION_TOOL_PATH environment variable (optional override)
-     * 2. Cache directory (checks for existing cached tool, downloads only if missing)
-     * 3. Common installation locations
+     * 1. Cache directory (checks for existing cached tool, downloads only if missing)
+     * 2. Downloads directly from Apache website (no environment variables required)
+     * 3. Common installation locations (for manually installed tools)
      *
      * @return Path to the tool JAR, or null if not found and download fails
      */
     private Path findToolJar() {
-        // Check environment variable (optional override)
-        String envPath = System.getenv("JAKARTA_MIGRATION_TOOL_PATH");
-        if (envPath != null && !envPath.isBlank()) {
-            Path path = Paths.get(envPath);
-            if (Files.exists(path)) {
-                log.info("Found migration tool via JAKARTA_MIGRATION_TOOL_PATH: {}", path);
-                return path;
-            }
-        }
-        
         // Check cache directory first (without downloading)
         Path cacheDir = getCacheDirectory();
         if (cacheDir != null) {
@@ -273,17 +263,18 @@ public class ApacheTomcatMigrationTool {
             }
         }
         
-        // Only download if not found in cache (lazy download on demand)
+        // Download directly from Apache website (lazy download on demand)
+        // No environment variables required - downloads from official Apache sources
         try {
-            log.info("Apache Tomcat migration tool not found in cache, downloading on demand...");
+            log.info("Apache Tomcat migration tool not found in cache, downloading from Apache website...");
             ToolDownloader downloader = new ToolDownloader();
             Path downloadedJar = downloader.downloadApacheTomcatMigrationTool();
             if (downloadedJar != null && Files.exists(downloadedJar)) {
-                log.info("Apache Tomcat migration tool downloaded successfully: {}", downloadedJar);
+                log.info("Apache Tomcat migration tool downloaded successfully from Apache website: {}", downloadedJar);
                 return downloadedJar;
             }
         } catch (IOException e) {
-            log.warn("Failed to download migration tool: {}", e.getMessage());
+            log.warn("Failed to download migration tool from Apache website: {}", e.getMessage());
             // Continue to check other locations
         }
         
@@ -315,9 +306,9 @@ public class ApacheTomcatMigrationTool {
             }
         }
         
-        log.error("Apache Tomcat migration tool JAR not found and download failed. " +
-                 "You can manually set JAKARTA_MIGRATION_TOOL_PATH environment variable or " +
-                 "download from https://tomcat.apache.org/download-migration.cgi");
+        log.error("Apache Tomcat migration tool JAR not found and download from Apache website failed. " +
+                 "You can manually download from https://tomcat.apache.org/download-migration.cgi " +
+                 "or set JAKARTA_MIGRATION_TOOL_PATH environment variable to point to the tool JAR");
         
         return null;
     }

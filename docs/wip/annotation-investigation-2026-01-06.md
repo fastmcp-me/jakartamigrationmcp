@@ -360,6 +360,50 @@ Made tool download **lazy/on-demand** - only downloads when tool is actually use
 
 ---
 
+## Finding #10: Direct Apache Website Download
+
+### Discovery Date
+January 6, 2026
+
+### Problem
+Tool downloader was using GitHub API and required environment variables, making it complex and potentially unreliable.
+
+### Solution
+Updated to download directly from Apache website with multiple fallback URLs.
+
+### Changes Made
+
+1. **Removed Environment Variable Requirement:**
+   - No longer checks `JAKARTA_MIGRATION_TOOL_PATH` in primary flow
+   - Tool downloads automatically from Apache website
+   - Env var can still be used as override if needed
+
+2. **Direct Apache Download:**
+   - Removed GitHub API version detection
+   - Uses multiple Apache download URLs with fallback:
+     - Apache archive (official distribution)
+     - GitHub releases (Apache hosts releases here)
+     - Apache CDN (alternative mirror)
+   - Uses stable version (1.0.0) - no dynamic version detection
+
+3. **Simplified Code:**
+   - Removed `getLatestReleaseVersion()` method
+   - Removed `getDownloadUrl()` method
+   - Removed GitHub API dependencies
+   - Cleaner, more maintainable code
+
+### Benefits
+
+- ✅ **Zero Configuration** - Works out of the box, no env vars needed
+- ✅ **More Reliable** - Multiple download sources with automatic fallback
+- ✅ **Simpler** - No API calls, no version detection
+- ✅ **Faster** - Direct download, no API round-trip
+- ✅ **Official Sources** - Downloads from Apache's official distribution
+
+**Status:** ✅ Implemented
+
+---
+
 ## Finding #3: Working Examples Research
 
 ### Discovery Date

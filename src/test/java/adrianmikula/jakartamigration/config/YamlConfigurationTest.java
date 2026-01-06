@@ -43,8 +43,11 @@ class YamlConfigurationTest {
         assertThat(featureFlagsProperties.getEnabled()).isTrue();
         assertThat(featureFlagsProperties.getDefaultTier())
             .isEqualTo(FeatureFlagsProperties.LicenseTier.COMMUNITY);
+        // License key can be empty string if env var not set
         assertThat(featureFlagsProperties.getLicenseKey()).isNotNull();
+        // Features map is empty by default in application.yml
         assertThat(featureFlagsProperties.getFeatures()).isNotNull();
+        assertThat(featureFlagsProperties.getFeatures()).isEmpty();
 
         // Verify ApifyLicenseProperties defaults
         assertThat(apifyLicenseProperties.getEnabled()).isTrue();
@@ -55,7 +58,8 @@ class YamlConfigurationTest {
         assertThat(apifyLicenseProperties.getAllowOfflineValidation()).isTrue();
 
         // Verify StripeLicenseProperties defaults
-        assertThat(stripeLicenseProperties.getEnabled()).isTrue();
+        // Note: Stripe is disabled by default in application.yml
+        assertThat(stripeLicenseProperties.getEnabled()).isFalse();
         assertThat(stripeLicenseProperties.getApiUrl())
             .isEqualTo("https://api.stripe.com/v1");
         assertThat(stripeLicenseProperties.getCacheTtlSeconds()).isEqualTo(3600L);
@@ -68,8 +72,18 @@ class YamlConfigurationTest {
      * Test that mcp-stdio profile loads correctly.
      */
     @Nested
+    @SpringBootTest(classes = adrianmikula.projectname.ProjectNameApplication.class)
     @ActiveProfiles("mcp-stdio")
     class StdioProfileTest {
+        @Autowired(required = false)
+        private FeatureFlagsProperties featureFlagsProperties;
+
+        @Autowired(required = false)
+        private ApifyLicenseProperties apifyLicenseProperties;
+
+        @Autowired(required = false)
+        private StripeLicenseProperties stripeLicenseProperties;
+
         @Test
         void shouldLoadStdioProfileConfiguration() {
             assertThat(featureFlagsProperties).isNotNull();
@@ -89,8 +103,18 @@ class YamlConfigurationTest {
      * Test that mcp-sse profile loads correctly.
      */
     @Nested
+    @SpringBootTest(classes = adrianmikula.projectname.ProjectNameApplication.class)
     @ActiveProfiles("mcp-sse")
     class SseProfileTest {
+        @Autowired(required = false)
+        private FeatureFlagsProperties featureFlagsProperties;
+
+        @Autowired(required = false)
+        private ApifyLicenseProperties apifyLicenseProperties;
+
+        @Autowired(required = false)
+        private StripeLicenseProperties stripeLicenseProperties;
+
         @Test
         void shouldLoadSseProfileConfiguration() {
             assertThat(featureFlagsProperties).isNotNull();
@@ -108,8 +132,10 @@ class YamlConfigurationTest {
 
     /**
      * Test that environment variable substitution works.
+     * Using @SpringBootTest properties parameter for higher precedence over YAML.
      */
     @Nested
+    @SpringBootTest(classes = adrianmikula.projectname.ProjectNameApplication.class)
     @TestPropertySource(properties = {
         "jakarta.migration.feature-flags.enabled=false",
         "jakarta.migration.feature-flags.default-tier=PREMIUM",
@@ -127,6 +153,15 @@ class YamlConfigurationTest {
         "jakarta.migration.stripe.license-key-prefix=test_"
     })
     class PropertiesOverrideTest {
+        @Autowired(required = false)
+        private FeatureFlagsProperties featureFlagsProperties;
+
+        @Autowired(required = false)
+        private ApifyLicenseProperties apifyLicenseProperties;
+
+        @Autowired(required = false)
+        private StripeLicenseProperties stripeLicenseProperties;
+
         @Test
         void shouldLoadConfigurationFromProperties() {
             assertThat(featureFlagsProperties).isNotNull();
@@ -160,17 +195,23 @@ class YamlConfigurationTest {
 
     /**
      * Test that feature overrides work correctly.
+     * Using @SpringBootTest properties parameter for higher precedence over YAML.
      */
     @Nested
+    @SpringBootTest(classes = adrianmikula.projectname.ProjectNameApplication.class)
     @TestPropertySource(properties = {
         "jakarta.migration.feature-flags.features.auto-fixes=true",
         "jakarta.migration.feature-flags.features.one-click-refactor=false"
     })
     class FeatureOverridesTest {
+        @Autowired(required = false)
+        private FeatureFlagsProperties featureFlagsProperties;
+
         @Test
         void shouldLoadFeatureOverrides() {
             assertThat(featureFlagsProperties).isNotNull();
             assertThat(featureFlagsProperties.getFeatures()).isNotNull();
+            // Test properties should override the empty map from application.yml
             assertThat(featureFlagsProperties.getFeatures().get("auto-fixes")).isTrue();
             assertThat(featureFlagsProperties.getFeatures().get("one-click-refactor")).isFalse();
         }
@@ -178,8 +219,10 @@ class YamlConfigurationTest {
 
     /**
      * Test that Stripe price ID mappings work correctly.
+     * Using @SpringBootTest properties parameter for higher precedence over YAML.
      */
     @Nested
+    @SpringBootTest(classes = adrianmikula.projectname.ProjectNameApplication.class)
     @TestPropertySource(properties = {
         "jakarta.migration.stripe.product-id-premium=prod_premium",
         "jakarta.migration.stripe.product-id-enterprise=prod_enterprise",
@@ -187,9 +230,13 @@ class YamlConfigurationTest {
         "jakarta.migration.stripe.price-id-to-tier.price_456=ENTERPRISE"
     })
     class StripePriceIdMappingsTest {
+        @Autowired(required = false)
+        private StripeLicenseProperties stripeLicenseProperties;
+
         @Test
         void shouldLoadStripePriceIdMappings() {
             assertThat(stripeLicenseProperties).isNotNull();
+            // Test properties should override empty defaults from application.yml
             assertThat(stripeLicenseProperties.getProductIdPremium()).isEqualTo("prod_premium");
             assertThat(stripeLicenseProperties.getProductIdEnterprise()).isEqualTo("prod_enterprise");
             assertThat(stripeLicenseProperties.getPriceIdToTier()).isNotNull();
@@ -200,30 +247,42 @@ class YamlConfigurationTest {
 
     /**
      * Test that Apify actor ID is loaded correctly.
+     * Using @SpringBootTest properties parameter for higher precedence over YAML.
      */
     @Nested
+    @SpringBootTest(classes = adrianmikula.projectname.ProjectNameApplication.class)
     @TestPropertySource(properties = {
         "jakarta.migration.apify.actor-id=test-actor-id"
     })
     class ApifyActorIdTest {
+        @Autowired(required = false)
+        private ApifyLicenseProperties apifyLicenseProperties;
+
         @Test
         void shouldLoadApifyActorId() {
             assertThat(apifyLicenseProperties).isNotNull();
+            // Test property should override empty default from application.yml
             assertThat(apifyLicenseProperties.getActorId()).isEqualTo("test-actor-id");
         }
     }
 
     /**
      * Test that Stripe webhook secret is loaded correctly.
+     * Using @SpringBootTest properties parameter for higher precedence over YAML.
      */
     @Nested
+    @SpringBootTest(classes = adrianmikula.projectname.ProjectNameApplication.class)
     @TestPropertySource(properties = {
         "jakarta.migration.stripe.webhook-secret=test-webhook-secret"
     })
     class StripeWebhookSecretTest {
+        @Autowired(required = false)
+        private StripeLicenseProperties stripeLicenseProperties;
+
         @Test
         void shouldLoadStripeWebhookSecret() {
             assertThat(stripeLicenseProperties).isNotNull();
+            // Test property should override empty default from application.yml
             assertThat(stripeLicenseProperties.getWebhookSecret()).isEqualTo("test-webhook-secret");
         }
     }

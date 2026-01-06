@@ -7,13 +7,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Service for downloading and caching external tools.
@@ -22,16 +20,26 @@ import java.util.regex.Pattern;
 @Slf4j
 public class ToolDownloader {
     
-    private static final String APACHE_TOMCAT_MIGRATION_REPO = "apache/tomcat-jakartaee-migration";
     private static final String APACHE_TOMCAT_MIGRATION_JAR_PATTERN = "jakartaee-migration-.*-shaded\\.jar";
-    private static final String GITHUB_API_BASE = "https://api.github.com/repos/";
-    private static final String GITHUB_RELEASES_BASE = "https://github.com/";
+    
+    // Direct download URLs from Apache website (trying multiple sources for reliability)
+    private static final String[] APACHE_DOWNLOAD_URLS = {
+        // Primary: Apache archive (official distribution)
+        "https://archive.apache.org/dist/tomcat/tomcat-10/v10.1.20/bin/extras/jakartaee-migration-1.0.0-shaded.jar",
+        // Fallback: GitHub releases (Apache hosts releases here)
+        "https://github.com/apache/tomcat-jakartaee-migration/releases/download/v1.0.0/jakartaee-migration-1.0.0-shaded.jar",
+        // Alternative: Direct from Apache Tomcat extras
+        "https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.20/bin/extras/jakartaee-migration-1.0.0-shaded.jar"
+    };
+    
+    private static final String DEFAULT_VERSION = "1.0.0";
     
     /**
      * Downloads the Apache Tomcat migration tool if not already cached.
+     * Downloads directly from Apache website - no environment variables required.
      *
      * @return Path to the downloaded/cached tool JAR
-     * @throws IOException if download fails
+     * @throws IOException if download fails from all sources
      */
     public Path downloadApacheTomcatMigrationTool() throws IOException {
         Path cacheDir = getCacheDirectory();
@@ -42,18 +50,28 @@ public class ToolDownloader {
             return cachedJar;
         }
         
-        log.info("Apache Tomcat migration tool not found in cache, downloading...");
+        log.info("Apache Tomcat migration tool not found in cache, downloading from Apache website...");
         
-        // Get latest release info
-        String latestVersion = getLatestReleaseVersion();
-        String downloadUrl = getDownloadUrl(latestVersion);
+        // Try multiple download URLs (Apache archive, GitHub releases, etc.)
+        IOException lastException = null;
+        Path downloadPath = cacheDir.resolve("jakartaee-migration-" + DEFAULT_VERSION + "-shaded.jar");
         
-        // Download to cache directory
-        Path downloadPath = cacheDir.resolve("jakartaee-migration-" + latestVersion + "-shaded.jar");
-        downloadFile(downloadUrl, downloadPath);
+        for (String downloadUrl : APACHE_DOWNLOAD_URLS) {
+            try {
+                log.info("Attempting to download from: {}", downloadUrl);
+                downloadFile(downloadUrl, downloadPath);
+                log.info("Apache Tomcat migration tool downloaded successfully from Apache website: {}", downloadPath);
+                return downloadPath;
+            } catch (IOException e) {
+                log.warn("Failed to download from {}: {}", downloadUrl, e.getMessage());
+                lastException = e;
+                // Try next URL
+            }
+        }
         
-        log.info("Apache Tomcat migration tool downloaded successfully to: {}", downloadPath);
-        return downloadPath;
+        // All download attempts failed
+        throw new IOException("Failed to download Apache Tomcat migration tool from all sources. " +
+                            "Last error: " + (lastException != null ? lastException.getMessage() : "Unknown error"));
     }
     
     /**
@@ -98,70 +116,6 @@ public class ToolDownloader {
         }
     }
     
-    /**
-     * Gets the latest release version from GitHub API.
-     */
-    private String getLatestReleaseVersion() throws IOException {
-        String apiUrl = GITHUB_API_BASE + APACHE_TOMCAT_MIGRATION_REPO + "/releases/latest";
-        
-        try {
-            URL url = new URL(apiUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Accept", "application/json");
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(10000);
-            
-            // Follow redirects
-            int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || 
-                responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
-                String redirectUrl = connection.getHeaderField("Location");
-                connection = (HttpURLConnection) new URL(redirectUrl).openConnection();
-                connection.setRequestMethod("GET");
-                connection.setRequestProperty("Accept", "application/json");
-            }
-            
-            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                throw new IOException("Failed to get latest release: HTTP " + connection.getResponseCode());
-            }
-            
-            try (InputStream is = connection.getInputStream()) {
-                byte[] buffer = new byte[8192];
-                StringBuilder response = new StringBuilder();
-                int bytesRead;
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    response.append(new String(buffer, 0, bytesRead));
-                }
-                
-                String responseStr = response.toString();
-                // Parse JSON to get tag_name
-                Pattern versionPattern = Pattern.compile("\"tag_name\"\\s*:\\s*\"([^\"]+)\"");
-                Matcher matcher = versionPattern.matcher(responseStr);
-                if (matcher.find()) {
-                    String version = matcher.group(1);
-                    // Remove 'v' prefix if present
-                    return version.startsWith("v") ? version.substring(1) : version;
-                }
-            }
-            
-            throw new IOException("Could not parse version from GitHub API response");
-            
-        } catch (Exception e) {
-            log.warn("Failed to get latest version from GitHub API, using default: {}", e.getMessage());
-            // Fallback to a known version
-            return "1.0.0";
-        }
-    }
-    
-    /**
-     * Gets the download URL for a specific version.
-     */
-    private String getDownloadUrl(String version) {
-        // GitHub releases URL format
-        return GITHUB_RELEASES_BASE + APACHE_TOMCAT_MIGRATION_REPO + 
-               "/releases/download/v" + version + "/jakartaee-migration-" + version + "-shaded.jar";
-    }
     
     /**
      * Downloads a file from a URL to a local path.
@@ -169,7 +123,7 @@ public class ToolDownloader {
     private void downloadFile(String urlString, Path destination) throws IOException {
         log.info("Downloading from: {}", urlString);
         
-        URL url = new URL(urlString);
+        URL url = URI.create(urlString).toURL();
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setConnectTimeout(30000); // 30 seconds

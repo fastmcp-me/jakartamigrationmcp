@@ -6,7 +6,6 @@ import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyGraphB
 import adrianmikula.jakartamigration.dependencyanalysis.service.NamespaceClassifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,8 +17,10 @@ import java.util.stream.Collectors;
 /**
  * Implementation of DependencyAnalysisModule.
  * Analyzes Java project dependencies to identify Jakarta migration readiness.
+ * 
+ * Note: This class is NOT annotated with @Component because it's created as a @Bean
+ * in JakartaMigrationConfig. This prevents duplicate bean registration.
  */
-@Component
 @RequiredArgsConstructor
 @Slf4j
 public class DependencyAnalysisModuleImpl implements DependencyAnalysisModule {

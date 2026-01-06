@@ -140,6 +140,9 @@ jakarta:
       server:
         name: jakarta-migration-mcp
         version: 1.0.0-SNAPSHOT
+        # Server description for GetInstructions/ListOfferings actions
+        # This helps Cursor understand what the server does
+        description: "Jakarta Migration MCP Server - Tools for analyzing and migrating Java applications from Java EE 8 (javax.*) to Jakarta EE 9+ (jakarta.*). Provides dependency analysis, blocker detection, version recommendations, migration planning, and runtime verification."
         # Transport mode: stdio (default, for local) or sse (for Apify/HTTP)
         transport: ${MCP_TRANSPORT:stdio}
         enabled: true
@@ -150,6 +153,16 @@ jakarta:
         # Enable annotation scanner to automatically register @McpTool annotated methods
         annotation-scanner:
           enabled: true
+        # WORKAROUND: Disable problematic capabilities that cause timeouts
+        # Spring AI MCP 1.1.2 has issues with instructions/offerings causing 1-minute timeouts
+        # These are optional MCP capabilities - tools still work without them
+        capabilities:
+          instructions: false
+          offerings: false
+          # Keep tools, resources, and prompts enabled
+          tools: true
+          resources: true
+          prompts: true
         # SSE configuration (only used when transport=sse)
         sse:
           port: ${MCP_SSE_PORT:8080}
