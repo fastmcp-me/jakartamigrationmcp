@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Jakarta Migration MCP server exposes five core tools that enable AI assistants to help with Jakarta EE migration tasks.
+The Jakarta Migration MCP server exposes six core tools that enable AI assistants to help with Jakarta EE migration tasks.
 
 ## Implemented Tools
 
@@ -151,7 +151,50 @@ Creates a migration plan for Jakarta migration.
 
 ---
 
-### 5. `verify_runtime`
+### 5. `analyze_migration_impact`
+
+Analyzes full migration impact combining dependency analysis and source code scanning.
+
+**Parameters**:
+- `projectPath` (String): Path to the project root directory
+
+**Returns**: JSON string containing:
+- `status`: "success" or "error"
+- `totalFilesToMigrate`: Total number of files that need migration
+- `totalJavaxImports`: Total number of javax.* imports found
+- `totalBlockers`: Number of migration blockers
+- `totalRecommendations`: Number of version recommendations
+- `estimatedEffortMinutes`: Estimated migration effort in minutes
+- `complexity`: Migration complexity level (LOW, MEDIUM, HIGH)
+- `riskScore`: Risk assessment score
+- `riskFactors`: List of risk factors
+- `readinessScore`: Migration readiness score
+- `readinessMessage`: Human-readable readiness message
+- `totalFilesScanned`: Total number of source files scanned
+- `totalDependencies`: Total number of dependencies
+
+**Example**:
+```json
+{
+  "status": "success",
+  "totalFilesToMigrate": 15,
+  "totalJavaxImports": 42,
+  "totalBlockers": 2,
+  "totalRecommendations": 8,
+  "estimatedEffortMinutes": 120,
+  "complexity": "MEDIUM",
+  "riskScore": 0.3,
+  "riskFactors": ["2 dependency blockers found"],
+  "readinessScore": 0.75,
+  "readinessMessage": "Mostly ready, some issues to resolve",
+  "totalFilesScanned": 25,
+  "totalDependencies": 45
+}
+```
+
+---
+
+### 6. `verify_runtime`
 
 Verifies runtime execution of a migrated application.
 

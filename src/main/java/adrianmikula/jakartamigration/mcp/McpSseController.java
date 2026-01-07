@@ -316,6 +316,10 @@ public class McpSseController {
                     "text", result
                 ))
             );
+        } catch (IllegalArgumentException e) {
+            // Tool not found - return error response instead of throwing
+            log.warn("Tool not found: " + toolName);
+            throw e; // Let processMcpRequest handle it as a JSON-RPC error
         } catch (Exception e) {
             log.error("Error executing tool: " + toolName, e);
             throw new RuntimeException("Tool execution failed: " + e.getMessage(), e);
@@ -444,24 +448,38 @@ public class McpSseController {
         response.put("jsonrpc", "2.0");
         response.put("id", id);
         
-        switch (method) {
-            case "initialize":
-                response.put("result", handleInitialize(request));
-                break;
-            case "tools/list":
-                response.put("result", handleToolsList(enabledTools));
-                break;
-            case "tools/call":
-                response.put("result", handleToolCall(request));
-                break;
-            case "ping":
-                response.put("result", Map.of("status", "pong"));
-                break;
-            default:
-                response.put("error", Map.of(
-                    "code", -32601,
-                    "message", "Method not found: " + method
-                ));
+        try {
+            switch (method) {
+                case "initialize":
+                    response.put("result", handleInitialize(request));
+                    break;
+                case "tools/list":
+                    response.put("result", handleToolsList(enabledTools));
+                    break;
+                case "tools/call":
+                    response.put("result", handleToolCall(request));
+                    break;
+                case "ping":
+                    response.put("result", Map.of("status", "pong"));
+                    break;
+                default:
+                    response.put("error", Map.of(
+                        "code", -32601,
+                        "message", "Method not found: " + method
+                    ));
+            }
+        } catch (IllegalArgumentException e) {
+            // Tool not found or invalid argument - return JSON-RPC error
+            response.put("error", Map.of(
+                "code", -32602,
+                "message", e.getMessage()
+            ));
+        } catch (RuntimeException e) {
+            // Other runtime errors - return JSON-RPC error
+            response.put("error", Map.of(
+                "code", -32603,
+                "message", "Internal error: " + e.getMessage()
+            ));
         }
         
         return response;

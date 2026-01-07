@@ -56,6 +56,7 @@ The Jakarta Migration MCP Server enables your AI coding assistant to:
 - **🚫 Detect Blockers** - Identify dependencies and code patterns that prevent Jakarta migration
 - **📦 Recommend Versions** - Suggest Jakarta-compatible versions for existing dependencies
 - **📋 Create Migration Plans** - Generate comprehensive, phased migration plans with risk assessment
+- **📊 Analyze Migration Impact** - Comprehensive impact analysis combining dependency analysis and source code scanning
 - **✅ Verify Runtime** - Test migrated applications to ensure they run correctly after migration
 
 ### The Problem It Solves
@@ -68,6 +69,42 @@ Migrating from Java EE 8 (`javax.*`) to Jakarta EE 9+ (`jakarta.*`) is complex b
 - **Risk Assessment**: Need to understand migration impact before starting
 
 This MCP server provides AI assistants with the specialized knowledge and tools to navigate these challenges effectively.
+
+## 🔒 Security & Privacy
+
+Your code and project data are handled with the utmost care. We understand that Java developers working with enterprise codebases need complete confidence in the security and privacy of their intellectual property.
+
+### Stateless Architecture
+
+✅ **No Data Persistence** - The service is completely stateless. Your project files, source code, and analysis results are never stored, logged, or persisted on our servers.
+
+✅ **No Data Collection** - We don't collect, track, or analyze your code. Each request is processed independently with no memory of previous requests.
+
+✅ **Local Execution Option** - For maximum privacy, you can run the entire service locally using the [Local Setup](#local-setup-stdio) option. Your code never leaves your machine.
+
+### Privacy Guarantees
+
+- **Zero Code Storage**: Project files are only read during analysis and immediately discarded
+- **No Telemetry**: No usage tracking, analytics, or code scanning for any purpose other than migration analysis
+- **Open Source**: The core service is open source, so you can audit exactly what it does
+- **Enterprise Ready**: Safe for use with proprietary and sensitive codebases
+
+### Hosted Service (Apify)
+
+When using the Apify-hosted service:
+- Analysis is performed in isolated, ephemeral containers
+- All containers are destroyed immediately after processing
+- No persistent storage is used
+- Your API token is only used for authentication and billing
+
+### Local Service
+
+When running locally via STDIO:
+- **100% Local** - Everything runs on your machine
+- **No Network Calls** - No external requests are made
+- **Complete Control** - You have full visibility and control over the process
+
+**For maximum security and privacy, we recommend using the local STDIO setup for sensitive projects.**
 
 ## 💰 Pricing & Features
 
@@ -82,7 +119,7 @@ This MCP server provides AI assistants with the specialized knowledge and tools 
 
 ### Premium Features (Paid)
 
-🚀 **Advanced capabilities:**
+🚀 **Advanced capabilities (coming soon):**
 - **Auto-Fixes** - Automatically fix detected issues without manual intervention
 - **One-Click Refactor** - Execute complete Jakarta migration with a single command
 - **Binary Fixes** - Fix issues in compiled binaries and JAR files
@@ -90,7 +127,6 @@ This MCP server provides AI assistants with the specialized knowledge and tools 
 - **Batch Operations** - Process multiple projects simultaneously
 - **Custom Recipes** - Create and use custom migration recipes
 - **API Access** - Programmatic API for CI/CD integrations
-- **Export Reports** - Export detailed reports in PDF, HTML formats
 
 **Pricing**: Starting from $0.01 / 1,000 results. [View pricing →](https://apify.com/adrian_m/jakartamigrationmcp#pricing)
 
@@ -339,6 +375,7 @@ Verify the runtime of my migrated application at /path/to/app.jar
 | `detectBlockers` | Find dependencies and patterns that prevent migration |
 | `recommendVersions` | Get Jakarta-compatible version recommendations |
 | `createMigrationPlan` | Generate phased migration plan with risk assessment |
+| `analyzeMigrationImpact` | Analyze full migration impact combining dependency analysis and source code scanning |
 | `verifyRuntime` | Test migrated application execution |
 
 See [MCP Tools Documentation](docs/mcp/MCP_TOOLS_IMPLEMENTATION.md) for detailed tool descriptions and parameters.
