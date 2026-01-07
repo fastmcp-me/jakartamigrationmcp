@@ -116,6 +116,19 @@ jakarta:
       # The system checks if the email exists in Stripe customers
       enable-email-validation: ${STRIPE_ENABLE_EMAIL_VALIDATION:true}
     
+    # Local Storage Configuration (File-based)
+    # Optional: Enable file-based local session storage
+    # When enabled, license validation results are cached locally in a JSON file
+    # This allows the MCP server to work offline after initial validation
+    storage:
+      file:
+        # Enable/disable file-based local storage
+        enabled: ${FILE_STORAGE_ENABLED:false}
+        # Path to storage file (relative to working directory)
+        path: ${FILE_STORAGE_PATH:.mcp_license_sessions.json}
+        # TTL for cached sessions (hours)
+        cache-ttl-hours: ${FILE_STORAGE_CACHE_TTL_HOURS:24}
+    
     # Apify License Validation Configuration (DISABLED - Stripe is primary)
     # Apify support is deprecated in favor of Stripe payment processing
     # To enable Apify, set APIFY_VALIDATION_ENABLED=true

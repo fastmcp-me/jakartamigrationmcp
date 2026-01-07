@@ -82,9 +82,7 @@ dependencies {
     implementation("io.github.resilience4j:resilience4j-circuitbreaker:${property("resilience4jVersion")}")
     implementation("io.github.resilience4j:resilience4j-ratelimiter:${property("resilience4jVersion")}")
 
-    // Database - REMOVED (not needed for MCP server)
-    // runtimeOnly("org.postgresql:postgresql")
-    // implementation("org.liquibase:liquibase-core")
+    // No database dependencies needed - using simple file-based storage
 
     // Git Operations
     implementation("org.eclipse.jgit:org.eclipse.jgit:${property("jgitVersion")}")

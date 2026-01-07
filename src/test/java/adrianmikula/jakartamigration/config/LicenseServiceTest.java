@@ -26,9 +26,9 @@ class LicenseServiceTest {
 
     @BeforeEach
     void setUp() {
-        // ApifyLicenseService is optional (nullable) - pass null to simulate disabled state by default
-        // Some tests will override this to test Apify behavior
-        licenseService = new LicenseService(stripeLicenseService, null);
+        // ApifyLicenseService and LocalLicenseStorageService are optional (nullable)
+        // Pass null to simulate disabled state by default
+        licenseService = new LicenseService(stripeLicenseService, null, null);
     }
 
     @Test
@@ -65,7 +65,7 @@ class LicenseServiceTest {
     @Test
     void shouldUseApifyValidationWhenAvailable() {
         // Create service with Apify enabled for this test
-        licenseService = new LicenseService(stripeLicenseService, apifyLicenseService);
+        licenseService = new LicenseService(stripeLicenseService, apifyLicenseService, null);
         
         // Stripe is tried first (returns null for non-Stripe keys)
         when(stripeLicenseService.validateLicense(anyString())).thenReturn(null);

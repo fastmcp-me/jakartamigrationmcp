@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import adrianmikula.jakartamigration.storage.service.LocalLicenseStorageService;
 
 /**
  * Service for license key validation and tier determination.
@@ -23,13 +24,17 @@ public class LicenseService {
     private final StripeLicenseService stripeLicenseService;
     @Nullable
     private final ApifyLicenseService apifyLicenseService; // Optional, may be null if disabled
+    @Nullable
+    private final LocalLicenseStorageService localStorageService; // Optional, may be null if disabled
 
     @Autowired
     public LicenseService(
             StripeLicenseService stripeLicenseService,
-            @Autowired(required = false) @Nullable ApifyLicenseService apifyLicenseService) {
+            @Autowired(required = false) @Nullable ApifyLicenseService apifyLicenseService,
+            @Autowired(required = false) @Nullable LocalLicenseStorageService localStorageService) {
         this.stripeLicenseService = stripeLicenseService;
         this.apifyLicenseService = apifyLicenseService;
+        this.localStorageService = localStorageService;
     }
 
     /**
@@ -87,6 +92,8 @@ public class LicenseService {
      * Validate license by email address.
      * Checks if the email exists in Stripe customers and has active subscriptions.
      * 
+     * First checks local storage (if enabled), then validates via Stripe API.
+     * 
      * @param email The customer email address
      * @return License tier if valid, null if invalid
      */
@@ -96,11 +103,27 @@ public class LicenseService {
             return null;
         }
 
+        // Check local storage first (if enabled)
+        if (localStorageService != null) {
+            FeatureFlagsProperties.LicenseTier cachedTier = localStorageService.getTierByEmail(email);
+            if (cachedTier != null) {
+                log.debug("License validated via local storage: {}", maskEmail(email));
+                return cachedTier;
+            }
+        }
+
+        // Validate via Stripe API
         try {
             FeatureFlagsProperties.LicenseTier tier = stripeLicenseService.validateLicenseByEmail(email)
                 .block(java.time.Duration.ofSeconds(5));
             if (tier != null) {
                 log.debug("License validated via Stripe email: {}", maskEmail(email));
+                
+                // Store in local storage (if enabled)
+                if (localStorageService != null) {
+                    localStorageService.storeSession(email, null, tier, 24L);
+                }
+                
                 return tier;
             }
         } catch (Exception e) {

@@ -7,9 +7,11 @@ import adrianmikula.jakartamigration.dependencyanalysis.domain.*;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyAnalysisModule;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyGraphBuilder;
 import adrianmikula.jakartamigration.dependencyanalysis.service.DependencyGraphException;
+import adrianmikula.jakartamigration.api.service.StripePaymentLinkService;
 import adrianmikula.jakartamigration.config.ApifyBillingService;
 import adrianmikula.jakartamigration.config.FeatureFlag;
 import adrianmikula.jakartamigration.config.FeatureFlagsService;
+import adrianmikula.jakartamigration.config.FeatureFlagsProperties;
 import adrianmikula.jakartamigration.runtimeverification.domain.VerificationOptions;
 import adrianmikula.jakartamigration.runtimeverification.domain.VerificationResult;
 import adrianmikula.jakartamigration.runtimeverification.service.RuntimeVerificationModule;
@@ -45,6 +47,7 @@ public class JakartaMigrationTools {
     private final RuntimeVerificationModule runtimeVerificationModule;
     private final FeatureFlagsService featureFlags;
     private final ApifyBillingService apifyBillingService;
+    private final StripePaymentLinkService paymentLinkService;
     private final adrianmikula.jakartamigration.sourcecodescanning.service.SourceCodeScanner sourceCodeScanner;
     
     /**
@@ -169,12 +172,20 @@ public class JakartaMigrationTools {
      */
     @McpTool(
         name = "createMigrationPlan",
-        description = "Creates a comprehensive migration plan for Jakarta migration. Returns a JSON plan with phases, estimated duration, and risk assessment."
+        description = "Creates a comprehensive migration plan for Jakarta migration. Returns a JSON plan with phases, estimated duration, and risk assessment. Requires PREMIUM license."
     )
     public String createMigrationPlan(
             @McpToolParam(description = "Path to the project root directory", required = true) String projectPath) {
         try {
             log.info("Creating migration plan for project: {}", projectPath);
+            
+            // Check if user has required tier (PREMIUM or ENTERPRISE)
+            if (!featureFlags.hasTier(FeatureFlagsProperties.LicenseTier.PREMIUM)) {
+                return createUpgradeRequiredResponse(
+                    FeatureFlag.ONE_CLICK_REFACTOR,
+                    "The 'createMigrationPlan' tool requires a PREMIUM license. This tool creates comprehensive migration plans with detailed phases and risk assessment."
+                );
+            }
             
             Path project = Paths.get(projectPath);
             if (!Files.exists(project) || !Files.isDirectory(project)) {
@@ -210,12 +221,20 @@ public class JakartaMigrationTools {
      */
     @McpTool(
         name = "analyzeMigrationImpact",
-        description = "Analyzes full migration impact combining dependency analysis and source code scanning. Returns a comprehensive summary with file counts, import counts, blockers, and estimated effort."
+        description = "Analyzes full migration impact combining dependency analysis and source code scanning. Returns a comprehensive summary with file counts, import counts, blockers, and estimated effort. Requires PREMIUM license."
     )
     public String analyzeMigrationImpact(
             @McpToolParam(description = "Path to the project root directory", required = true) String projectPath) {
         try {
             log.info("Analyzing migration impact for project: {}", projectPath);
+            
+            // Check if user has required tier (PREMIUM or ENTERPRISE)
+            if (!featureFlags.hasTier(FeatureFlagsProperties.LicenseTier.PREMIUM)) {
+                return createUpgradeRequiredResponse(
+                    FeatureFlag.ADVANCED_ANALYSIS,
+                    "The 'analyzeMigrationImpact' tool requires a PREMIUM license. This tool provides comprehensive migration impact analysis combining dependency analysis and source code scanning."
+                );
+            }
             
             Path project = Paths.get(projectPath);
             if (!Files.exists(project) || !Files.isDirectory(project)) {
@@ -251,13 +270,21 @@ public class JakartaMigrationTools {
      */
     @McpTool(
         name = "verifyRuntime",
-        description = "Verifies runtime execution of a migrated Jakarta application. Returns a JSON result with execution status, errors, and metrics."
+        description = "Verifies runtime execution of a migrated Jakarta application. Returns a JSON result with execution status, errors, and metrics. Requires PREMIUM license."
     )
     public String verifyRuntime(
             @McpToolParam(description = "Path to the JAR file to execute", required = true) String jarPath,
             @McpToolParam(description = "Optional timeout in seconds (default: 30)", required = false) Integer timeoutSeconds) {
         try {
             log.info("Verifying runtime for JAR: {}", jarPath);
+            
+            // Check if user has required tier (PREMIUM or ENTERPRISE)
+            if (!featureFlags.hasTier(FeatureFlagsProperties.LicenseTier.PREMIUM)) {
+                return createUpgradeRequiredResponse(
+                    FeatureFlag.BINARY_FIXES,
+                    "The 'verifyRuntime' tool requires a PREMIUM license. This tool verifies runtime execution of migrated Jakarta applications."
+                );
+            }
             
             Path jar = Paths.get(jarPath);
             if (!Files.exists(jar) || !Files.isRegularFile(jar)) {
@@ -564,14 +591,44 @@ public class JakartaMigrationTools {
     }
     
     private String createUpgradeRequiredResponse(FeatureFlag flag, String message) {
-        String upgradeMessage = featureFlags.getUpgradeMessage(flag);
-        return "{\n" +
-               "  \"status\": \"upgrade_required\",\n" +
-               "  \"message\": \"" + escapeJson(message) + "\",\n" +
-               "  \"upgradeMessage\": \"" + escapeJson(upgradeMessage) + "\",\n" +
-               "  \"requiredTier\": \"" + flag.getRequiredTier() + "\",\n" +
-               "  \"currentTier\": \"" + featureFlags.getCurrentTier() + "\"\n" +
-               "}";
+        FeatureFlagsService.UpgradeInfo upgradeInfo = featureFlags.getUpgradeInfo(flag);
+        FeatureFlagsProperties.LicenseTier currentTier = featureFlags.getCurrentTier();
+        
+        StringBuilder json = new StringBuilder();
+        json.append("{\n");
+        json.append("  \"status\": \"upgrade_required\",\n");
+        json.append("  \"message\": \"").append(escapeJson(message)).append("\",\n");
+        json.append("  \"featureName\": \"").append(escapeJson(upgradeInfo.getFeatureName())).append("\",\n");
+        json.append("  \"featureDescription\": \"").append(escapeJson(upgradeInfo.getFeatureDescription())).append("\",\n");
+        json.append("  \"currentTier\": \"").append(currentTier).append("\",\n");
+        json.append("  \"requiredTier\": \"").append(upgradeInfo.getRequiredTier()).append("\",\n");
+        
+        if (upgradeInfo.getPaymentLink() != null && !upgradeInfo.getPaymentLink().isBlank()) {
+            json.append("  \"paymentLink\": \"").append(escapeJson(upgradeInfo.getPaymentLink())).append("\",\n");
+        }
+        
+        // Get all available payment links
+        if (paymentLinkService != null) {
+            java.util.Map<String, String> allPaymentLinks = paymentLinkService.getAllPaymentLinks();
+            if (!allPaymentLinks.isEmpty()) {
+                json.append("  \"availablePlans\": {\n");
+                boolean first = true;
+                for (java.util.Map.Entry<String, String> entry : allPaymentLinks.entrySet()) {
+                    if (!first) {
+                        json.append(",\n");
+                    }
+                    json.append("    \"").append(escapeJson(entry.getKey())).append("\": \"")
+                        .append(escapeJson(entry.getValue())).append("\"");
+                    first = false;
+                }
+                json.append("\n  },\n");
+            }
+        }
+        
+        json.append("  \"upgradeMessage\": \"").append(escapeJson(upgradeInfo.getMessage())).append("\"\n");
+        json.append("}");
+        
+        return json.toString();
     }
     
     private String buildStringArray(List<String> list) {

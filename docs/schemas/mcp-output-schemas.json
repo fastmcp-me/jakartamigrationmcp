@@ -38,7 +38,7 @@
         { "$ref": "#/definitions/baseResponse" },
         {
           "type": "object",
-          "required": ["status", "message", "upgradeMessage", "requiredTier", "currentTier"],
+          "required": ["status", "message", "featureName", "featureDescription", "requiredTier", "currentTier", "upgradeMessage"],
           "properties": {
             "status": {
               "const": "upgrade_required"
@@ -47,9 +47,13 @@
               "type": "string",
               "description": "Message explaining why upgrade is required"
             },
-            "upgradeMessage": {
+            "featureName": {
               "type": "string",
-              "description": "Instructions for upgrading"
+              "description": "Name of the feature that requires upgrade"
+            },
+            "featureDescription": {
+              "type": "string",
+              "description": "Description of the feature that requires upgrade"
             },
             "requiredTier": {
               "type": "string",
@@ -60,6 +64,30 @@
               "type": "string",
               "enum": ["COMMUNITY", "PREMIUM", "ENTERPRISE"],
               "description": "Current license tier"
+            },
+            "paymentLink": {
+              "type": "string",
+              "format": "uri",
+              "description": "Direct payment link for the required tier (optional, only if configured)"
+            },
+            "availablePlans": {
+              "type": "object",
+              "description": "Map of all available payment plans (optional, only if configured)",
+              "additionalProperties": {
+                "type": "string",
+                "format": "uri",
+                "description": "Payment link URL for the plan"
+              },
+              "examples": [
+                {
+                  "premium": "https://buy.stripe.com/premium-link",
+                  "enterprise": "https://buy.stripe.com/enterprise-link"
+                }
+              ]
+            },
+            "upgradeMessage": {
+              "type": "string",
+              "description": "Human-readable instructions for upgrading"
             }
           }
         }
@@ -586,7 +614,8 @@
     "analyzeMigrationImpact": {
       "oneOf": [
         { "$ref": "#/definitions/migrationImpactResponse" },
-        { "$ref": "#/definitions/errorResponse" }
+        { "$ref": "#/definitions/errorResponse" },
+        { "$ref": "#/definitions/upgradeRequiredResponse" }
       ]
     },
     "check_env": {

@@ -177,10 +177,71 @@
       },
       "response": {
         "status": "upgrade_required",
-        "message": "This feature requires a PREMIUM license",
-        "upgradeMessage": "To use createMigrationPlan, please upgrade to PREMIUM tier. Visit https://example.com/upgrade",
+        "message": "The 'createMigrationPlan' tool requires a PREMIUM license. This tool creates comprehensive migration plans with detailed phases and risk assessment.",
+        "featureName": "One-click refactoring",
+        "featureDescription": "Execute complete Jakarta migration refactoring with a single command",
         "requiredTier": "PREMIUM",
-        "currentTier": "COMMUNITY"
+        "currentTier": "COMMUNITY",
+        "paymentLink": "https://buy.stripe.com/premium-link",
+        "availablePlans": {
+          "premium": "https://buy.stripe.com/premium-link",
+          "enterprise": "https://buy.stripe.com/enterprise-link"
+        },
+        "upgradeMessage": "The 'One-click refactoring' feature requires a PREMIUM license, but your current tier is COMMUNITY. To unlock this feature, please upgrade at: https://buy.stripe.com/premium-link"
+      }
+    },
+    "analyzeMigrationImpact": {
+      "request": {
+        "projectPath": "/path/to/my-java-project"
+      },
+      "response": {
+        "status": "success",
+        "totalFilesToMigrate": 150,
+        "totalJavaxImports": 450,
+        "totalBlockers": 2,
+        "totalRecommendations": 8,
+        "estimatedEffortMinutes": 120,
+        "complexity": "HIGH",
+        "riskScore": 0.3,
+        "riskFactors": [
+          "2 dependency blockers found",
+          "Large codebase with 500+ files"
+        ],
+        "readinessScore": 0.75,
+        "readinessMessage": "Mostly ready for Jakarta migration, but 2 blockers need to be resolved",
+        "totalFilesScanned": 500,
+        "totalDependencies": 45,
+        "premiumFeatures": {
+          "recommended": true,
+          "message": "This migration has HIGH complexity and will take approximately 120 minutes. Premium features can automate most of this work.",
+          "features": [
+            "One-Click Refactor - Execute complete migration automatically",
+            "Auto-Fixes - Automatically resolve 2 blockers",
+            "Advanced Analysis - Deep transitive conflict detection",
+            "Batch Operations - Process multiple projects simultaneously"
+          ],
+          "pricingUrl": "https://buy.stripe.com/premium-link",
+          "estimatedSavings": "120 minutes of manual work"
+        }
+      }
+    },
+    "analyzeMigrationImpactUpgradeRequired": {
+      "request": {
+        "projectPath": "/path/to/project"
+      },
+      "response": {
+        "status": "upgrade_required",
+        "message": "The 'analyzeMigrationImpact' tool requires a PREMIUM license. This tool provides comprehensive migration impact analysis combining dependency analysis and source code scanning.",
+        "featureName": "Advanced dependency analysis",
+        "featureDescription": "Deep dependency analysis with transitive conflict detection and resolution",
+        "requiredTier": "PREMIUM",
+        "currentTier": "COMMUNITY",
+        "paymentLink": "https://buy.stripe.com/premium-link",
+        "availablePlans": {
+          "premium": "https://buy.stripe.com/premium-link",
+          "enterprise": "https://buy.stripe.com/enterprise-link"
+        },
+        "upgradeMessage": "The 'Advanced dependency analysis' feature requires a PREMIUM license, but your current tier is COMMUNITY. To unlock this feature, please upgrade at: https://buy.stripe.com/premium-link"
       }
     }
   }

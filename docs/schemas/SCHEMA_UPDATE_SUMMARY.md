@@ -1,6 +1,6 @@
 # Schema Update Summary
 
-## Date: 2026-01-07
+## Date: 2026-01-07 (Updated: 2026-01-XX)
 
 ## Changes Made
 
@@ -61,10 +61,23 @@ Added optional `premiumFeatures` field to:
 - `migrationPlanResponse` - Appears for complex migrations (>30 min, >5 phases, risk >0.3)
 - `migrationImpactResponse` - Appears for high complexity/effort projects
 
+#### ✅ Updated Upgrade Required Response Schema
+
+**Enhanced**: `upgradeRequiredResponse`
+- **New Required Fields**:
+  - `featureName` (string) - Name of the feature requiring upgrade
+  - `featureDescription` (string) - Description of the feature
+- **New Optional Fields**:
+  - `paymentLink` (string, URI) - Direct payment link for required tier
+  - `availablePlans` (object) - Map of all available payment plans with links
+- **Updated Fields**:
+  - `message` - More detailed explanation
+  - `upgradeMessage` - Human-readable upgrade instructions
+
 #### Updated Tool Mappings
 
 Added to `toolOutputs`:
-- `analyzeMigrationImpact` → `migrationImpactResponse` or `errorResponse`
+- `analyzeMigrationImpact` → `migrationImpactResponse` or `errorResponse` or `upgradeRequiredResponse`
 - `check_env` → `checkEnvResponse` or `errorResponse`
 
 ## Schema Validation
@@ -89,7 +102,7 @@ Added to `toolOutputs`:
 3. ✅ `recommendVersions` → `recommendationsResponse` (with `premiumFeatures`) or `errorResponse`
 4. ✅ `createMigrationPlan` → `migrationPlanResponse` (with `premiumFeatures`) or `errorResponse` or `upgradeRequiredResponse`
 5. ✅ `verifyRuntime` → `verificationResponse` or `errorResponse` or `upgradeRequiredResponse`
-6. ✅ `analyzeMigrationImpact` → `migrationImpactResponse` (with `premiumFeatures`) or `errorResponse` (NEW)
+6. ✅ `analyzeMigrationImpact` → `migrationImpactResponse` (with `premiumFeatures`) or `errorResponse` or `upgradeRequiredResponse` (NEW)
 7. ✅ `check_env` → `checkEnvResponse` or `errorResponse` (NEW)
 
 ## Premium Features Integration
