@@ -45,6 +45,7 @@ public class JakartaMigrationTools {
     private final RuntimeVerificationModule runtimeVerificationModule;
     private final FeatureFlagsService featureFlags;
     private final ApifyBillingService apifyBillingService;
+    private final adrianmikula.jakartamigration.sourcecodescanning.service.SourceCodeScanner sourceCodeScanner;
     
     /**
      * Analyzes a Java project for Jakarta migration readiness.
@@ -367,6 +368,50 @@ public class JakartaMigrationTools {
             }
             json.append("  ]\n");
         }
+        json.append("}");
+        return json.toString();
+    }
+    
+    private String buildSourceCodeResponse(adrianmikula.jakartamigration.sourcecodescanning.domain.SourceCodeAnalysisResult result) {
+        StringBuilder json = new StringBuilder();
+        json.append("{\n");
+        json.append("  \"status\": \"success\",\n");
+        json.append("  \"totalFilesScanned\": ").append(result.totalFilesScanned()).append(",\n");
+        json.append("  \"totalFilesWithJavaxUsage\": ").append(result.totalFilesWithJavaxUsage()).append(",\n");
+        json.append("  \"totalJavaxImports\": ").append(result.totalJavaxImports()).append(",\n");
+        json.append("  \"filesWithJavaxUsage\": [\n");
+        
+        for (int i = 0; i < result.filesWithJavaxUsage().size(); i++) {
+            adrianmikula.jakartamigration.sourcecodescanning.domain.FileUsage fileUsage = result.filesWithJavaxUsage().get(i);
+            json.append("    {\n");
+            json.append("      \"filePath\": \"").append(escapeJson(fileUsage.filePath().toString())).append("\",\n");
+            json.append("      \"lineCount\": ").append(fileUsage.lineCount()).append(",\n");
+            json.append("      \"javaxImportCount\": ").append(fileUsage.getJavaxImportCount()).append(",\n");
+            json.append("      \"imports\": [\n");
+            
+            for (int j = 0; j < fileUsage.javaxImports().size(); j++) {
+                adrianmikula.jakartamigration.sourcecodescanning.domain.ImportStatement imp = fileUsage.javaxImports().get(j);
+                json.append("        {\n");
+                json.append("          \"fullImport\": \"").append(escapeJson(imp.fullImport())).append("\",\n");
+                json.append("          \"javaxPackage\": \"").append(escapeJson(imp.javaxPackage())).append("\",\n");
+                json.append("          \"jakartaEquivalent\": \"").append(escapeJson(imp.jakartaEquivalent())).append("\",\n");
+                json.append("          \"lineNumber\": ").append(imp.lineNumber()).append("\n");
+                json.append("        }");
+                if (j < fileUsage.javaxImports().size() - 1) {
+                    json.append(",");
+                }
+                json.append("\n");
+            }
+            
+            json.append("      ]\n");
+            json.append("    }");
+            if (i < result.filesWithJavaxUsage().size() - 1) {
+                json.append(",");
+            }
+            json.append("\n");
+        }
+        
+        json.append("  ]\n");
         json.append("}");
         return json.toString();
     }
