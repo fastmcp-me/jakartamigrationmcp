@@ -14,7 +14,9 @@ spring:
   main:
     web-application-type: servlet  # Enable web server for Streamable HTTP transport
   server:
-    port: ${MCP_STREAMABLE_HTTP_PORT:8080}
+    # Railway provides PORT env var, but we also support MCP_STREAMABLE_HTTP_PORT
+    # Priority: PORT (Railway) > MCP_STREAMABLE_HTTP_PORT > 8080 (default)
+    port: ${PORT:${MCP_STREAMABLE_HTTP_PORT:8080}}
   ai:
     mcp:
       server:

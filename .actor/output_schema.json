@@ -6,8 +6,8 @@
     "mcpEndpoint": {
       "type": "string",
       "title": "MCP Server Endpoint",
-      "description": "Server-Sent Events endpoint for MCP protocol communication. Connect MCP clients to this endpoint.",
-      "template": "{{run.containerUrl}}/mcp/sse"
+      "description": "Streamable HTTP endpoint for MCP protocol communication. Connect MCP clients to this endpoint.",
+      "template": "{{run.containerUrl}}/mcp/streamable-http"
     },
     "healthCheck": {
       "type": "string",
