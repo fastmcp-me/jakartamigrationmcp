@@ -1,9 +1,11 @@
 package adrianmikula.jakartamigration.coderefactoring.service;
 
 import adrianmikula.jakartamigration.coderefactoring.domain.MigrationPlan;
+import adrianmikula.jakartamigration.coderefactoring.domain.PhaseAction;
 import adrianmikula.jakartamigration.coderefactoring.domain.RefactoringPhase;
 import adrianmikula.jakartamigration.dependencyanalysis.domain.DependencyAnalysisReport;
 import adrianmikula.jakartamigration.dependencyanalysis.domain.RiskAssessment;
+import adrianmikula.jakartamigration.sourcecodescanning.service.SourceCodeScanner;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,6 +22,15 @@ import java.util.stream.Stream;
 public class MigrationPlanner {
     
     private static final int ESTIMATED_MINUTES_PER_FILE = 2;
+    private final SourceCodeScanner sourceCodeScanner;
+    
+    public MigrationPlanner() {
+        this.sourceCodeScanner = null; // Can be null for backward compatibility
+    }
+    
+    public MigrationPlanner(SourceCodeScanner sourceCodeScanner) {
+        this.sourceCodeScanner = sourceCodeScanner;
+    }
     
     /**
      * Creates a migration plan for the given project.
@@ -34,7 +45,7 @@ public class MigrationPlanner {
         List<String> orderedFiles = determineOptimalOrder(allFiles);
         
         // Create phases
-        List<RefactoringPhase> phases = createPhases(orderedFiles);
+        List<RefactoringPhase> phases = createPhases(orderedFiles, project);
         
         // Calculate estimated duration
         Duration estimatedDuration = calculateEstimatedDuration(phases);
@@ -107,7 +118,7 @@ public class MigrationPlanner {
                filePath.contains("web.xml");
     }
     
-    private List<RefactoringPhase> createPhases(List<String> files) {
+    private List<RefactoringPhase> createPhases(List<String> files, Path projectRoot) {
         List<RefactoringPhase> phases = new ArrayList<>();
         
         // Phase 1: Build files
@@ -119,6 +130,7 @@ public class MigrationPlanner {
                 1,
                 "Update build files and dependencies",
                 buildFiles,
+                createBuildFileActions(buildFiles, projectRoot),
                 List.of("UpdateMavenCoordinates", "UpdateGradleDependencies"),
                 List.of(),
                 Duration.ofMinutes(buildFiles.size() * ESTIMATED_MINUTES_PER_FILE)
@@ -134,6 +146,7 @@ public class MigrationPlanner {
                 2,
                 "Update XML configuration files",
                 configFiles,
+                createConfigFileActions(configFiles, projectRoot),
                 List.of("UpdatePersistenceXml", "UpdateWebXml"),
                 phases.isEmpty() ? List.of() : List.of("Phase 1"),
                 Duration.ofMinutes(configFiles.size() * ESTIMATED_MINUTES_PER_FILE)
@@ -161,6 +174,7 @@ public class MigrationPlanner {
                 phaseNumber++,
                 "Refactor Java files (batch " + ((i / batchSize) + 1) + ")",
                 batch,
+                createJavaFileActions(batch, projectRoot),
                 List.of("AddJakartaNamespace"),
                 dependencies,
                 Duration.ofMinutes(batch.size() * ESTIMATED_MINUTES_PER_FILE)
@@ -188,6 +202,74 @@ public class MigrationPlanner {
         }
         
         return prerequisites;
+    }
+    
+    private List<PhaseAction> createBuildFileActions(List<String> buildFiles, Path projectRoot) {
+        List<PhaseAction> actions = new ArrayList<>();
+        for (String file : buildFiles) {
+            List<String> changes = new ArrayList<>();
+            if (file.contains("pom.xml")) {
+                changes.add("Update Maven dependencies from javax.* to jakarta.*");
+                changes.add("Update Spring Boot version to 3.x if needed");
+            } else if (file.contains("build.gradle")) {
+                changes.add("Update Gradle dependencies from javax.* to jakarta.*");
+                changes.add("Update Spring Boot version to 3.x if needed");
+            }
+            actions.add(new PhaseAction(file, "UPDATE_DEPENDENCY", changes));
+        }
+        return actions;
+    }
+    
+    private List<PhaseAction> createConfigFileActions(List<String> configFiles, Path projectRoot) {
+        List<PhaseAction> actions = new ArrayList<>();
+        for (String file : configFiles) {
+            List<String> changes = new ArrayList<>();
+            if (file.contains("persistence.xml")) {
+                changes.add("Update namespace from http://java.sun.com/xml/ns/persistence to https://jakarta.ee/xml/ns/persistence");
+            } else if (file.contains("web.xml")) {
+                changes.add("Update namespace from http://java.sun.com/xml/ns/javaee to https://jakarta.ee/xml/ns/jakartaee");
+            }
+            actions.add(new PhaseAction(file, "UPDATE_XML_NAMESPACE", changes));
+        }
+        return actions;
+    }
+    
+    private List<PhaseAction> createJavaFileActions(List<String> javaFiles, Path projectRoot) {
+        List<PhaseAction> actions = new ArrayList<>();
+        
+        if (sourceCodeScanner == null) {
+            // Fallback: create generic actions if scanner not available
+            for (String file : javaFiles) {
+                actions.add(new PhaseAction(file, "UPDATE_IMPORTS", List.of("Replace all javax.* imports with jakarta.* equivalents")));
+            }
+            return actions;
+        }
+        
+        // Use source code scanner to get specific import changes
+        for (String file : javaFiles) {
+            Path filePath = projectRoot.resolve(file);
+            try {
+                if (Files.exists(filePath)) {
+                    adrianmikula.jakartamigration.sourcecodescanning.domain.FileUsage usage = 
+                        sourceCodeScanner.scanFile(filePath);
+                    
+                    if (usage.hasJavaxUsage()) {
+                        List<String> changes = usage.javaxImports().stream()
+                            .map(imp -> String.format("Line %d: Replace '%s' with '%s'", 
+                                imp.lineNumber(), imp.fullImport(), imp.jakartaEquivalent()))
+                            .collect(Collectors.toList());
+                        actions.add(new PhaseAction(file, "UPDATE_IMPORTS", changes));
+                    } else {
+                        actions.add(new PhaseAction(file, "UPDATE_IMPORTS", List.of("No javax imports found - file may already be migrated")));
+                    }
+                }
+            } catch (Exception e) {
+                // If scanning fails, create generic action
+                actions.add(new PhaseAction(file, "UPDATE_IMPORTS", List.of("Replace all javax.* imports with jakarta.* equivalents")));
+            }
+        }
+        
+        return actions;
     }
 }
 

@@ -24,5 +24,13 @@ public interface SourceCodeScanner {
      * @return File usage information
      */
     adrianmikula.jakartamigration.sourcecodescanning.domain.FileUsage scanFile(Path filePath);
+    
+    /**
+     * Scans XML files for javax.* usage in namespaces and class references.
+     *
+     * @param projectPath Path to the project root directory
+     * @return List of XML files with javax.* usage
+     */
+    java.util.List<adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage> scanXmlFiles(java.nio.file.Path projectPath);
 }
 

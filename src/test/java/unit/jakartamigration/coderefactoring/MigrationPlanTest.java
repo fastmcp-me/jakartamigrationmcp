@@ -22,6 +22,7 @@ class MigrationPlanTest {
             1,
             "Phase 1",
             List.of("pom.xml"),
+            List.of(), // actions
             List.of("Recipe1"),
             List.of(),
             Duration.ofMinutes(5)
@@ -30,6 +31,7 @@ class MigrationPlanTest {
             2,
             "Phase 2",
             List.of("File.java"),
+            List.of(), // actions
             List.of("Recipe2"),
             List.of("Phase 1"),
             Duration.ofMinutes(10)
@@ -37,7 +39,7 @@ class MigrationPlanTest {
         List<RefactoringPhase> phases = List.of(phase1, phase2);
         List<String> fileSequence = List.of("pom.xml", "File.java");
         Duration estimatedDuration = Duration.ofMinutes(15);
-        RiskAssessment riskAssessment = new RiskAssessment(0.3, List.of("Low risk"));
+        RiskAssessment riskAssessment = new RiskAssessment(0.3, List.of("Low risk"), List.of());
         
         // When
         MigrationPlan plan = new MigrationPlan(
@@ -60,9 +62,9 @@ class MigrationPlanTest {
     @DisplayName("Should calculate total duration from phases")
     void shouldCalculateTotalDuration() {
         // Given
-        RefactoringPhase phase1 = new RefactoringPhase(1, "P1", List.of(), List.of(), List.of(), Duration.ofMinutes(5));
-        RefactoringPhase phase2 = new RefactoringPhase(2, "P2", List.of(), List.of(), List.of(), Duration.ofMinutes(10));
-        RefactoringPhase phase3 = new RefactoringPhase(3, "P3", List.of(), List.of(), List.of(), Duration.ofMinutes(15));
+        RefactoringPhase phase1 = new RefactoringPhase(1, "P1", List.of(), List.of(), List.of(), List.of(), Duration.ofMinutes(5));
+        RefactoringPhase phase2 = new RefactoringPhase(2, "P2", List.of(), List.of(), List.of(), List.of(), Duration.ofMinutes(10));
+        RefactoringPhase phase3 = new RefactoringPhase(3, "P3", List.of(), List.of(), List.of(), List.of(), Duration.ofMinutes(15));
         
         // When
         Duration total = phase1.estimatedDuration()

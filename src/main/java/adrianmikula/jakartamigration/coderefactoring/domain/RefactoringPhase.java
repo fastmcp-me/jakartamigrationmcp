@@ -10,6 +10,7 @@ public record RefactoringPhase(
     int phaseNumber,
     String description,
     List<String> files,
+    List<PhaseAction> actions,
     List<String> recipes,
     List<String> dependencies,
     Duration estimatedDuration
@@ -23,6 +24,9 @@ public record RefactoringPhase(
         }
         if (files == null) {
             throw new IllegalArgumentException("Files list cannot be null");
+        }
+        if (actions == null) {
+            throw new IllegalArgumentException("Actions list cannot be null");
         }
         if (recipes == null) {
             throw new IllegalArgumentException("Recipes list cannot be null");

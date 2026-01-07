@@ -228,6 +228,7 @@ class JakartaMigrationToolsTest {
                 1,
                 "Update build files",
                 List.of("pom.xml"),
+                List.of(), // actions
                 List.of("UpdateMavenCoordinates"),
                 List.of(),
                 Duration.ofMinutes(5)

@@ -192,6 +192,7 @@ class JakartaMigrationToolsPerformanceTest {
                 1,
                 "Phase 1",
                 largeFileList.subList(0, Math.min(100, largeFileList.size())),
+                List.of(), // actions
                 List.of("AddJakartaNamespace"),
                 List.of(),
                 Duration.ofMinutes(30)

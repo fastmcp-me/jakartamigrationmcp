@@ -176,7 +176,7 @@ public class SourceCodeScannerImpl implements SourceCodeScanner {
                 String jakartaEquivalent = importName.replace("javax.", "jakarta.");
                 
                 // Find line number by searching for the import in content
-                int lineNumber = findLineNumber(lines, importName);
+                int lineNumber = findLineNumberInContent(lines, importName);
                 
                 // Extract package name (e.g., "javax.servlet" from "javax.servlet.ServletException")
                 String javaxPackage = extractPackageName(importName);
@@ -194,11 +194,11 @@ public class SourceCodeScannerImpl implements SourceCodeScanner {
     }
     
     /**
-     * Finds the line number of an import statement in the content.
+     * Finds the line number of a string in the content.
      */
-    private int findLineNumber(String[] lines, String importName) {
+    private int findLineNumberInContent(String[] lines, String searchText) {
         for (int i = 0; i < lines.length; i++) {
-            if (lines[i].contains("import") && lines[i].contains(importName)) {
+            if (lines[i].contains(searchText)) {
                 return i + 1; // Line numbers are 1-based
             }
         }
@@ -226,5 +226,140 @@ public class SourceCodeScannerImpl implements SourceCodeScanner {
         }
         return content.split("\n").length;
     }
+    
+    @Override
+    public List<adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage> scanXmlFiles(Path projectPath) {
+        if (projectPath == null || !Files.exists(projectPath) || !Files.isDirectory(projectPath)) {
+            log.warn("Invalid project path: {}", projectPath);
+            return List.of();
+        }
+        
+        List<adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage> xmlUsages = new ArrayList<>();
+        
+        try {
+            // Discover XML files
+            List<Path> xmlFiles = discoverXmlFiles(projectPath);
+            
+            log.info("Scanning {} XML files in project: {}", xmlFiles.size(), projectPath);
+            
+            // Scan XML files
+            xmlFiles.parallelStream()
+                .forEach(file -> {
+                    try {
+                        adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage usage = scanXmlFile(file);
+                        if (usage.hasJavaxUsage()) {
+                            synchronized(xmlUsages) {
+                                xmlUsages.add(usage);
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warn("Error scanning XML file: {}", file, e);
+                    }
+                });
+            
+        } catch (Exception e) {
+            log.error("Error scanning XML files in project: {}", projectPath, e);
+        }
+        
+        return xmlUsages;
+    }
+    
+    private List<Path> discoverXmlFiles(Path projectPath) {
+        List<Path> xmlFiles = new ArrayList<>();
+        
+        try (Stream<Path> paths = Files.walk(projectPath)) {
+            paths
+                .filter(Files::isRegularFile)
+                .filter(p -> p.toString().endsWith(".xml"))
+                .filter(this::shouldScanFile)
+                .forEach(xmlFiles::add);
+        } catch (IOException e) {
+            log.error("Error discovering XML files in: {}", projectPath, e);
+        }
+        
+        return xmlFiles;
+    }
+    
+    private adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage scanXmlFile(Path xmlFile) {
+        try {
+            String content = Files.readString(xmlFile);
+            String[] lines = content.split("\n");
+            
+            List<adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage.XmlNamespaceUsage> namespaceUsages = 
+                extractXmlNamespaceUsages(content, lines);
+            List<adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage.XmlClassReference> classReferences = 
+                extractXmlClassReferences(content, lines);
+            
+            return new adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage(
+                xmlFile,
+                namespaceUsages,
+                classReferences
+            );
+        } catch (Exception e) {
+            log.warn("Error scanning XML file: {}", xmlFile, e);
+            return new adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage(
+                xmlFile,
+                List.of(),
+                List.of()
+            );
+        }
+    }
+    
+    private List<adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage.XmlNamespaceUsage> extractXmlNamespaceUsages(
+            String content, String[] lines) {
+        List<adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage.XmlNamespaceUsage> usages = new ArrayList<>();
+        
+        // Match javax namespace URIs
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+            "xmlns(?::\\w+)?\\s*=\\s*[\"'](http://java\\.sun\\.com/xml/ns/[^\"']+)[\"']"
+        );
+        java.util.regex.Matcher matcher = pattern.matcher(content);
+        
+        while (matcher.find()) {
+            String namespaceUri = matcher.group(1);
+            String jakartaEquivalent = namespaceUri
+                .replace("http://java.sun.com/xml/ns/javaee", "https://jakarta.ee/xml/ns/jakartaee")
+                .replace("http://java.sun.com/xml/ns/persistence", "https://jakarta.ee/xml/ns/persistence");
+            
+            int lineNumber = findLineNumberInContent(lines, matcher.group(0));
+            
+            usages.add(new adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage.XmlNamespaceUsage(
+                namespaceUri,
+                jakartaEquivalent,
+                lineNumber
+            ));
+        }
+        
+        return usages;
+    }
+    
+    private List<adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage.XmlClassReference> extractXmlClassReferences(
+            String content, String[] lines) {
+        List<adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage.XmlClassReference> references = new ArrayList<>();
+        
+        // Match javax class names in XML (e.g., <servlet-class>javax.servlet.Servlet</servlet-class>)
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+            "<([^>]+)>(javax\\.[\\w.]+)</([^>]+)>"
+        );
+        java.util.regex.Matcher matcher = pattern.matcher(content);
+        
+        while (matcher.find()) {
+            String elementName = matcher.group(1);
+            String className = matcher.group(2);
+            String jakartaEquivalent = className.replace("javax.", "jakarta.");
+            
+            int lineNumber = findLineNumberInContent(lines, matcher.group(0));
+            
+            references.add(new adrianmikula.jakartamigration.sourcecodescanning.domain.XmlFileUsage.XmlClassReference(
+                className,
+                jakartaEquivalent,
+                elementName,
+                lineNumber
+            ));
+        }
+        
+        return references;
+    }
+    
 }
 

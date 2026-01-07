@@ -12,6 +12,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Custom SSE endpoint controller for MCP protocol.
@@ -36,6 +37,10 @@ public class McpSseController {
     
     @Value("${spring.ai.mcp.server.version:1.0.0-SNAPSHOT}")
     private String serverVersion;
+    
+    // Store active SSE connections by session ID (simple implementation using thread ID for now)
+    // In production, use proper session management with unique IDs
+    private final Map<String, SseEmitter> activeConnections = new ConcurrentHashMap<>();
 
     /**
      * SSE endpoint for MCP protocol.
@@ -74,6 +79,27 @@ public class McpSseController {
         
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
         
+        // Send initial connection message to let client know connection is ready
+        // Some MCP clients expect an initial message to confirm the connection
+        // We send a simple JSON-RPC notification (no id) to indicate server is ready
+        try {
+            Map<String, Object> readyNotification = new HashMap<>();
+            readyNotification.put("jsonrpc", "2.0");
+            readyNotification.put("method", "notifications/initialized");
+            readyNotification.put("params", Map.of(
+                "server", Map.of(
+                    "name", serverName,
+                    "version", serverVersion
+                )
+            ));
+            sendSseMessage(emitter, "message", readyNotification);
+            log.info("Sent initial connection confirmation to client");
+        } catch (IOException e) {
+            log.error("Failed to send initial connection message", e);
+            emitter.completeWithError(e);
+            return emitter;
+        }
+        
         // Handle incoming message if provided via query parameter
         if (message != null && !message.isEmpty()) {
             try {
@@ -85,13 +111,25 @@ public class McpSseController {
             }
         }
         
+        // Generate a simple session ID (in production, use proper session management)
+        String sessionId = UUID.randomUUID().toString();
+        activeConnections.put(sessionId, emitter);
+        log.debug("Registered SSE connection with session ID: {}", sessionId);
+        
         // Handle connection lifecycle
-        emitter.onCompletion(() -> log.info("SSE connection completed"));
+        emitter.onCompletion(() -> {
+            log.info("SSE connection completed for session: {}", sessionId);
+            activeConnections.remove(sessionId);
+        });
         emitter.onTimeout(() -> {
-            log.warn("SSE connection timed out");
+            log.warn("SSE connection timed out for session: {}", sessionId);
+            activeConnections.remove(sessionId);
             emitter.complete();
         });
-        emitter.onError((ex) -> log.error("SSE connection error", ex));
+        emitter.onError((ex) -> {
+            log.error("SSE connection error for session: {}", sessionId, ex);
+            activeConnections.remove(sessionId);
+        });
         
         return emitter;
     }
@@ -122,14 +160,18 @@ public class McpSseController {
      * 
      * This endpoint accepts MCP protocol messages and routes them to the appropriate handlers.
      * Supports authentication via Authorization header (Apify requirement).
-     * For SSE transport, responses should be sent via SSE events, but we also support direct POST responses.
+     * For SSE transport, responses are sent via SSE events to the active connection.
+     * Also returns the response in the POST response for compatibility.
      */
     @PostMapping(value = "/sse", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> handleMcpRequest(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-Session-Id", required = false) String sessionId,
             @RequestBody Map<String, Object> request) {
         
-        log.debug("Received MCP request: {}", request);
+        String method = (String) request.get("method");
+        log.info("Received MCP request: {} (session: {}, active connections: {})", 
+            method, sessionId, activeConnections.size());
         
         // Validate authentication if provided
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -139,6 +181,32 @@ public class McpSseController {
         }
         
         Map<String, Object> response = processMcpRequest(request);
+        
+        // If we have an active SSE connection, send the response via SSE as well
+        // Try to find the connection (if sessionId provided, use it; otherwise use first available)
+        SseEmitter emitter = null;
+        if (sessionId != null) {
+            emitter = activeConnections.get(sessionId);
+            if (emitter == null) {
+                log.warn("Session ID {} not found in active connections", sessionId);
+            }
+        } else if (!activeConnections.isEmpty()) {
+            // Use first available connection if no session ID provided
+            emitter = activeConnections.values().iterator().next();
+            log.debug("Using first available SSE connection (no session ID provided)");
+        }
+        
+        if (emitter != null) {
+            try {
+                sendSseMessage(emitter, "message", response);
+                log.info("Sent response via SSE for request: {} (id: {})", method, request.get("id"));
+            } catch (IOException e) {
+                log.warn("Failed to send response via SSE for request: {}, returning POST response only", method, e);
+            }
+        } else {
+            log.warn("No active SSE connection found for request: {}, returning POST response only", method);
+        }
+        
         return ResponseEntity.ok(response);
     }
 

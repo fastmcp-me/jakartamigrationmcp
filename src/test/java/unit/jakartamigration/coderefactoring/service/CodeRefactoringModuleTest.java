@@ -193,6 +193,7 @@ class CodeRefactoringModuleTest {
                 1,
                 "Test Phase",
                 List.of("Test.java"),
+                List.of(), // actions
                 List.of("AddJakartaNamespace"),
                 List.of(),
                 Duration.ofMinutes(10)

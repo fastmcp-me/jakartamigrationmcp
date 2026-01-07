@@ -29,6 +29,7 @@ class RefactoringPhaseTest {
             phaseNumber,
             description,
             files,
+            List.of(), // actions
             recipes,
             dependencies,
             duration
@@ -51,6 +52,7 @@ class RefactoringPhaseTest {
             1,
             "Test phase",
             List.of(),
+            List.of(), // actions
             List.of(),
             List.of(),
             Duration.ZERO
@@ -71,6 +73,7 @@ class RefactoringPhaseTest {
             3,
             "Phase 3",
             List.of("file.java"),
+            List.of(), // actions
             List.of("Recipe1"),
             dependencies,
             Duration.ofMinutes(5)

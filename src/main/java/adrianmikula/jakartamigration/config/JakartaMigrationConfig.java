@@ -100,8 +100,8 @@ public class JakartaMigrationConfig {
     }
     
     @Bean
-    public MigrationPlanner migrationPlanner() {
-        return new MigrationPlanner();
+    public MigrationPlanner migrationPlanner(adrianmikula.jakartamigration.sourcecodescanning.service.SourceCodeScanner sourceCodeScanner) {
+        return new MigrationPlanner(sourceCodeScanner);
     }
     
     @Bean
