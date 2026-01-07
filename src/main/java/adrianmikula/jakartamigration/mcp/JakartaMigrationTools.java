@@ -203,6 +203,46 @@ public class JakartaMigrationTools {
     }
     
     /**
+     * Analyzes full migration impact combining dependency analysis and source code scanning.
+     * 
+     * @param projectPath Path to the project root directory
+     * @return JSON string containing comprehensive migration impact summary
+     */
+    @McpTool(
+        name = "analyzeMigrationImpact",
+        description = "Analyzes full migration impact combining dependency analysis and source code scanning. Returns a comprehensive summary with file counts, import counts, blockers, and estimated effort."
+    )
+    public String analyzeMigrationImpact(
+            @McpToolParam(description = "Path to the project root directory", required = true) String projectPath) {
+        try {
+            log.info("Analyzing migration impact for project: {}", projectPath);
+            
+            Path project = Paths.get(projectPath);
+            if (!Files.exists(project) || !Files.isDirectory(project)) {
+                return createErrorResponse("Project path does not exist or is not a directory: " + projectPath);
+            }
+            
+            // Run dependency analysis
+            DependencyAnalysisReport depReport = dependencyAnalysisModule.analyzeProject(project);
+            
+            // Run source code scan
+            adrianmikula.jakartamigration.sourcecodescanning.domain.SourceCodeAnalysisResult scanResult = 
+                sourceCodeScanner.scanProject(project);
+            
+            // Create impact summary
+            adrianmikula.jakartamigration.coderefactoring.domain.MigrationImpactSummary summary = 
+                adrianmikula.jakartamigration.coderefactoring.domain.MigrationImpactSummary.from(depReport, scanResult);
+            
+            // Build response
+            return buildImpactSummaryResponse(summary);
+            
+        } catch (Exception e) {
+            log.error("Unexpected error during migration impact analysis", e);
+            return createErrorResponse("Unexpected error: " + e.getMessage());
+        }
+    }
+    
+    /**
      * Verifies runtime execution of a migrated application.
      * 
      * @param jarPath Path to the JAR file to execute
@@ -412,6 +452,26 @@ public class JakartaMigrationTools {
         }
         
         json.append("  ]\n");
+        json.append("}");
+        return json.toString();
+    }
+    
+    private String buildImpactSummaryResponse(adrianmikula.jakartamigration.coderefactoring.domain.MigrationImpactSummary summary) {
+        StringBuilder json = new StringBuilder();
+        json.append("{\n");
+        json.append("  \"status\": \"success\",\n");
+        json.append("  \"totalFilesToMigrate\": ").append(summary.totalFilesToMigrate()).append(",\n");
+        json.append("  \"totalJavaxImports\": ").append(summary.totalJavaxImports()).append(",\n");
+        json.append("  \"totalBlockers\": ").append(summary.totalBlockers()).append(",\n");
+        json.append("  \"totalRecommendations\": ").append(summary.totalRecommendations()).append(",\n");
+        json.append("  \"estimatedEffortMinutes\": ").append(summary.estimatedEffort().toMinutes()).append(",\n");
+        json.append("  \"complexity\": \"").append(summary.complexity()).append("\",\n");
+        json.append("  \"riskScore\": ").append(summary.overallRisk().riskScore()).append(",\n");
+        json.append("  \"riskFactors\": ").append(buildStringArray(summary.overallRisk().riskFactors())).append(",\n");
+        json.append("  \"readinessScore\": ").append(summary.dependencyAnalysis().readinessScore().score()).append(",\n");
+        json.append("  \"readinessMessage\": \"").append(escapeJson(summary.dependencyAnalysis().readinessScore().explanation())).append("\",\n");
+        json.append("  \"totalFilesScanned\": ").append(summary.sourceCodeAnalysis().totalFilesScanned()).append(",\n");
+        json.append("  \"totalDependencies\": ").append(summary.dependencyAnalysis().dependencyGraph().nodeCount()).append("\n");
         json.append("}");
         return json.toString();
     }

@@ -1,20 +1,67 @@
 # Jakarta Migration MCP Server
 
-A Model Context Protocol (MCP) server that provides AI assistants with specialized tools for analyzing and migrating Java applications from Java EE 8 (`javax.*`) to Jakarta EE 9+ (`jakarta.*`). This tool helps automate the complex process of Jakarta migration by providing deep dependency analysis, blocker detection, version recommendations, and migration planning.
+A Model Context Protocol (MCP) server that provides AI coding assistants with specialized tools for analyzing and migrating Java applications from Java EE 8 (`javax.*`) to Jakarta EE 9+ (`jakarta.*`).
 
-## What It Does
+[![Apify Store](https://img.shields.io/badge/Apify-Store-blue)](https://apify.com/adrian_m/jakartamigrationmcp)
+[![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-green)](https://modelcontextprotocol.io)
 
-The Jakarta Migration MCP Server enables AI coding assistants (Cursor, Claude Code, Antigravity) to:
+## 🚀 Quick Start
 
-- **Analyze Jakarta Readiness** - Assess Java projects for migration readiness with detailed dependency analysis
-- **Detect Blockers** - Identify dependencies and code patterns that prevent Jakarta migration
-- **Recommend Versions** - Suggest Jakarta-compatible versions for existing dependencies
-- **Create Migration Plans** - Generate comprehensive, phased migration plans with risk assessment
-- **Verify Runtime** - Test migrated applications to ensure they run correctly after migration
+### Option 1: Use Apify Hosted Server (Recommended)
+
+The easiest way to get started is using our **hosted MCP server on Apify** - no installation required!
+
+**Free Tier Available**: Basic features are free. [Get started →](https://apify.com/adrian_m/jakartamigrationmcp)
+
+**MCP Server URL**: `https://mcp.apify.com/?tools=actors,docs,adrian_m/JakartaMigrationMCP`
+
+**Configuration** (works with all MCP clients that support SSE):
+
+```json
+{
+  "mcpServers": {
+    "jakarta-migration": {
+      "type": "sse",
+      "url": "https://mcp.apify.com/?tools=actors,docs,adrian_m/JakartaMigrationMCP"
+    }
+  }
+}
+```
+
+> **🔑 Authentication**: You'll need an Apify API token. Get it from [Apify Console → Integrations](https://console.apify.com/account#/integrations). Some MCP clients may prompt you to authenticate via OAuth.
+
+See [Apify Setup](#apify-hosted-server-setup) below for detailed instructions.
+
+### Option 2: Run Locally (STDIO)
+
+For local development or when you need full control:
+
+**Prerequisites**: Java 21+ and Node.js 18+
+
+```bash
+# Install via npm (one-time)
+npm install -g @jakarta-migration/mcp-server
+
+# Or use with npx (no installation)
+npx -y @jakarta-migration/mcp-server
+```
+
+See [Local Setup](#local-setup-stdio) below for client configuration.
+
+## 📋 What It Does
+
+The Jakarta Migration MCP Server enables your AI coding assistant to:
+
+- **🔍 Analyze Jakarta Readiness** - Assess Java projects for migration readiness with detailed dependency analysis
+- **🚫 Detect Blockers** - Identify dependencies and code patterns that prevent Jakarta migration
+- **📦 Recommend Versions** - Suggest Jakarta-compatible versions for existing dependencies
+- **📋 Create Migration Plans** - Generate comprehensive, phased migration plans with risk assessment
+- **✅ Verify Runtime** - Test migrated applications to ensure they run correctly after migration
 
 ### The Problem It Solves
 
 Migrating from Java EE 8 (`javax.*`) to Jakarta EE 9+ (`jakarta.*`) is complex because:
+
 - **Dependency Hell**: Many libraries haven't migrated, creating transitive conflicts
 - **Binary Incompatibility**: Compiled JARs may reference `javax.*` internally
 - **Hidden Dependencies**: `javax.*` usage in XML configs, annotations, and dynamic loading
@@ -22,20 +69,20 @@ Migrating from Java EE 8 (`javax.*`) to Jakarta EE 9+ (`jakarta.*`) is complex b
 
 This MCP server provides AI assistants with the specialized knowledge and tools to navigate these challenges effectively.
 
-## Features
+## 💰 Pricing & Features
 
-### Core Capabilities
+### Free Tier (Community)
 
-- **Deep Dependency Analysis** - Analyzes Maven/Gradle projects to build complete dependency graphs
-- **Namespace Classification** - Identifies `javax.*` vs `jakarta.*` dependencies automatically
-- **Blocker Detection** - Finds dependencies with no Jakarta equivalents
-- **Version Recommendations** - Suggests Jakarta-compatible versions with migration paths
-- **Migration Planning** - Creates phased migration plans with risk assessment
-- **Runtime Verification** - Tests migrated applications to catch runtime issues
-- **OpenRewrite Integration** - Uses OpenRewrite for automated code refactoring
+✅ **All core features included:**
+- Dependency analysis
+- Blocker detection
+- Version recommendations
+- Migration planning
+- Runtime verification
 
-### Premium Features (with License)
+### Premium Features (Paid)
 
+🚀 **Advanced capabilities:**
 - **Auto-Fixes** - Automatically fix detected issues without manual intervention
 - **One-Click Refactor** - Execute complete Jakarta migration with a single command
 - **Binary Fixes** - Fix issues in compiled binaries and JAR files
@@ -45,124 +92,131 @@ This MCP server provides AI assistants with the specialized knowledge and tools 
 - **API Access** - Programmatic API for CI/CD integrations
 - **Export Reports** - Export detailed reports in PDF, HTML formats
 
-## Tech Stack
+**Pricing**: Starting from $0.01 / 1,000 results. [View pricing →](https://apify.com/adrian_m/jakartamigrationmcp#pricing)
 
-### Core Technologies
+## 🔧 Setup Instructions
 
-- **Java 21** - Modern Java with virtual threads and pattern matching
-- **Spring Boot 3.2+** - Application framework with Spring AI MCP integration
-- **Spring AI 1.0.0** - MCP server framework and AI integration
-- **Gradle** - Build automation and dependency management
-- **OpenRewrite** - Automated code refactoring and migration recipes
+### Apify Hosted Server Setup
 
-### Key Libraries
+The Apify-hosted server works with **all MCP clients** that support SSE transport.
 
-- **JGit** - Git repository operations
-- **ASM** - Bytecode analysis for runtime verification
-- **Resilience4j** - Circuit breakers and rate limiting
-- **TestContainers** - Integration testing with Docker
-- **JaCoCo** - Code coverage reporting
+**MCP Server URL**: `https://mcp.apify.com/?tools=actors,docs,adrian_m/JakartaMigrationMCP`  
+**Actor Page**: [apify.com/adrian_m/jakartamigrationmcp](https://apify.com/adrian_m/jakartamigrationmcp)
 
-### Infrastructure
+> **🔑 Authentication Required**: You'll need an Apify API token. Get it from [Apify Console → Integrations](https://console.apify.com/account#/integrations). Some MCP clients support OAuth authentication which will prompt you to sign in.
 
-- **PostgreSQL** - State management (optional, for advanced features)
-- **Redis** - Caching and queues (optional)
-- **Docker Compose** - Local development environment
+#### For Cursor IDE
 
-## Quick Start
+> **⚠️ Important**: Cursor primarily supports **stdio transport**, not SSE. For Cursor, use the [Local Setup (STDIO)](#local-setup-stdio) instructions below instead.
 
-### Prerequisites
+If your Cursor version supports SSE:
+1. Open Cursor Settings (`Ctrl+,` on Windows/Linux or `Cmd+,` on Mac)
+2. Navigate to **Features** → **MCP**
+3. Click **"+ Add New MCP Server"**
+4. Add configuration:
+
+```json
+{
+  "mcpServers": {
+    "jakarta-migration": {
+      "type": "sse",
+      "url": "https://mcp.apify.com/?tools=actors,docs,adrian_m/JakartaMigrationMCP",
+      "headers": {
+        "Authorization": "Bearer YOUR_APIFY_API_TOKEN"
+      }
+    }
+  }
+}
+```
+
+> **🔑 Get API Token**: Replace `YOUR_APIFY_API_TOKEN` with your token from [Apify Console → Integrations](https://console.apify.com/account#/integrations)
+
+5. **Restart Cursor** completely for changes to take effect
+
+#### For Claude Code (VS Code Extension)
+
+1. Open VS Code Settings (`Ctrl+,` or `Cmd+,`)
+2. Search for "MCP" or navigate to **Extensions** → **Claude Code** → **Settings**
+3. Add configuration:
+
+```json
+{
+  "mcpServers": {
+    "jakarta-migration": {
+      "type": "sse",
+      "url": "https://mcp.apify.com/?tools=actors,docs,adrian_m/JakartaMigrationMCP",
+      "headers": {
+        "Authorization": "Bearer YOUR_APIFY_API_TOKEN"
+      }
+    }
+  }
+}
+```
+
+> **🔑 Get API Token**: Replace `YOUR_APIFY_API_TOKEN` with your token from [Apify Console → Integrations](https://console.apify.com/account#/integrations)
+
+4. Restart VS Code
+
+#### For GitHub Copilot
+
+GitHub Copilot supports MCP through the Copilot Chat interface:
+
+1. Open Copilot Chat (`Ctrl+L` or `Cmd+L`)
+2. Navigate to **Settings** → **MCP Servers**
+3. Add server:
+   - **URL**: `https://mcp.apify.com/?tools=actors,docs,adrian_m/JakartaMigrationMCP`
+   - **Transport Type**: **SSE**
+   - **Authorization**: Add your Apify API token in the headers section
+
+> **🔑 Get API Token**: Get your token from [Apify Console → Integrations](https://console.apify.com/account#/integrations)
+
+#### For Antigravity
+
+1. Open Antigravity Settings
+2. Navigate to **MCP Configuration**
+3. Add server:
+
+```json
+{
+  "name": "jakarta-migration",
+  "type": "sse",
+  "url": "https://mcp.apify.com/?tools=actors,docs,adrian_m/JakartaMigrationMCP",
+  "headers": {
+    "Authorization": "Bearer YOUR_APIFY_API_TOKEN"
+  }
+}
+```
+
+> **🔑 Get API Token**: Replace `YOUR_APIFY_API_TOKEN` with your token from [Apify Console → Integrations](https://console.apify.com/account#/integrations)
+
+### Local Setup (STDIO)
+
+For local development, use STDIO transport which works with **Cursor, Claude Code, and Antigravity**.
+
+#### Prerequisites
 
 - **Java 21+** - [Download from Adoptium](https://adoptium.net/)
 - **Node.js 18+** - [Download from nodejs.org](https://nodejs.org/)
-- **Docker & Docker Compose** - For local services (optional)
 
-### Using Mise (Recommended)
-
-[mise](https://mise.jdx.dev/) is a tool version manager that handles all dependencies automatically.
-
-**Install mise:**
-```bash
-# Windows (winget)
-winget install jdx.mise
-
-# Linux/Mac
-curl https://mise.run | sh
-
-# Mac (Homebrew)
-brew install mise
-```
-
-**Setup project:**
-```bash
-cd JakartaMigrationMCP
-mise install          # Installs Java 21, Gradle, Node.js
-mise run setup        # Runs setup script
-```
-
-**Common mise commands:**
-```bash
-mise tasks            # View all available commands
-mise run test         # Run all tests
-mise run test-unit    # Run unit tests only
-mise run build        # Build the project (without tests)
-mise run build-all    # Build with tests
-mise run run          # Run the application
-mise run coverage     # Generate code coverage report
-mise run clean        # Clean build artifacts
-mise run start-services # Start Docker services (PostgreSQL, Redis)
-```
-
-See [Mise Setup Guide](docs/setup/MISE_SETUP.md) for complete task reference.
-
-See [Mise Setup Guide](docs/setup/MISE_SETUP.md) for detailed instructions.
-
-### Manual Setup
-
-**1. Install Java 21+**
-```bash
-# Verify installation
-java -version
-```
-
-**2. Install Node.js 18+**
-```bash
-# Verify installation
-node --version
-npm --version
-```
-
-**3. Build the project**
-```bash
-./gradlew build
-```
-
-**4. Run the application**
-```bash
-./gradlew bootRun
-```
-
-## MCP Installation & Usage
-
-### Quick Install
+#### Installation
 
 ```bash
-# Install globally via npm
+# Install globally (recommended)
 npm install -g @jakarta-migration/mcp-server
 
 # Or use with npx (no installation needed)
 npx -y @jakarta-migration/mcp-server
 ```
 
-### Configure in MCP Clients
+#### Configuration
 
-#### Cursor
+##### Cursor IDE
 
 1. Open Cursor Settings (`Ctrl+,` or `Cmd+,`)
 2. Navigate to **Features** → **MCP**
-3. Click **"+ Add New MCP Server"**
-4. Add configuration:
+3. Add configuration:
 
+**Windows:**
 ```json
 {
   "mcpServers": {
@@ -174,166 +228,185 @@ npx -y @jakarta-migration/mcp-server
 }
 ```
 
-5. **Restart Cursor** for changes to take effect
+**Mac/Linux:**
+```json
+{
+  "mcpServers": {
+    "jakarta-migration": {
+      "command": "npx",
+      "args": ["-y", "@jakarta-migration/mcp-server"]
+    }
+  }
+}
+```
 
-#### Claude Code
+4. **Restart Cursor** completely
 
-1. Open Claude Code Settings
-2. Navigate to **MCP** settings
-3. Add the same configuration as above
-4. Restart Claude Code
+##### Claude Code (VS Code Extension)
 
-#### Google Antigravity
+1. Open VS Code Settings
+2. Navigate to **Claude Code** → **MCP Settings**
+3. Add the same configuration as Cursor
+4. Restart VS Code
 
-Add the configuration to your Antigravity MCP settings file (location may vary).
+##### Antigravity
 
-### Usage Examples
+1. Open Antigravity Settings
+2. Navigate to **MCP Configuration**
+3. Add:
+
+```json
+{
+  "name": "jakarta-migration",
+  "command": "npx",
+  "args": ["-y", "@jakarta-migration/mcp-server"]
+}
+```
+
+#### Alternative: Run from JAR
+
+If you've built the project locally:
+
+**Windows:**
+```json
+{
+  "mcpServers": {
+    "jakarta-migration": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "C:\\path\\to\\jakarta-migration-mcp-1.0.0-SNAPSHOT.jar"
+      ]
+    }
+  }
+}
+```
+
+**Mac/Linux:**
+```json
+{
+  "mcpServers": {
+    "jakarta-migration": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "/path/to/jakarta-migration-mcp-1.0.0-SNAPSHOT.jar"
+      ]
+    }
+  }
+}
+```
+
+## 💬 Usage Examples
 
 Once configured, you can use the MCP tools in your AI assistant:
 
+### Analyze Project Readiness
+
 ```
-Analyze the Jakarta readiness of my project at /path/to/project
+Analyze the Jakarta readiness of my project at /path/to/my-project
 ```
+
+### Detect Migration Blockers
 
 ```
 Detect any blockers for Jakarta migration in my project
 ```
 
-```
-Create a migration plan for migrating to Jakarta EE
-```
+### Get Version Recommendations
 
 ```
 Recommend Jakarta-compatible versions for my dependencies
 ```
 
-```
-Verify the runtime of my migrated application
-```
-
-### Available MCP Tools
-
-- **`analyzeJakartaReadiness`** - Comprehensive project analysis
-- **`detectBlockers`** - Find migration blockers
-- **`recommendVersions`** - Get version recommendations
-- **`createMigrationPlan`** - Generate migration plan
-- **`verifyRuntime`** - Test migrated application
-
-See [MCP Tools Documentation](docs/mcp/MCP_TOOLS_IMPLEMENTATION.md) for detailed tool descriptions.
-
-## Project Structure
+### Create Migration Plan
 
 ```
-src/
-├── main/java/adrianmikula/jakartamigration/
-│   ├── config/              # Configuration (feature flags, license validation)
-│   ├── mcp/                 # MCP tools implementation
-│   ├── dependencyanalysis/  # Dependency analysis module
-│   ├── coderefactoring/     # Code refactoring module
-│   └── runtimeverification/ # Runtime verification module
-└── test/
-    ├── java/unit/           # Unit tests
-    ├── java/component/      # Component tests
-    └── java/e2e/            # End-to-end tests
+Create a migration plan for migrating my project to Jakarta EE
 ```
 
-## Documentation
+### Verify Runtime
 
-### Setup & Installation
+```
+Verify the runtime of my migrated application at /path/to/app.jar
+```
 
-- **[Installation Guide](docs/setup/INSTALLATION.md)** - Complete installation instructions
-- **[Mise Setup](docs/setup/MISE_SETUP.md)** - Tool version management with mise
-- **[MCP Setup](docs/setup/MCP_SETUP.md)** - MCP server configuration
-- **[Feature Flags Setup](docs/setup/FEATURE_FLAGS_SETUP.md)** - License and feature configuration
-- **[Stripe License Setup](docs/setup/STRIPE_LICENSE_SETUP.md)** - Stripe subscription validation
-- **[Apify License Setup](docs/setup/APIFY_LICENSE_SETUP.md)** - Apify license validation
+## 🛠️ Available Tools
 
-### Architecture
+| Tool | Description |
+|------|-------------|
+| `analyzeJakartaReadiness` | Comprehensive project analysis with readiness score |
+| `detectBlockers` | Find dependencies and patterns that prevent migration |
+| `recommendVersions` | Get Jakarta-compatible version recommendations |
+| `createMigrationPlan` | Generate phased migration plan with risk assessment |
+| `verifyRuntime` | Test migrated application execution |
 
-- **[Core Modules Design](docs/architecture/core-modules-design.md)** - System architecture
-- **[Feature Flags](docs/architecture/FEATURE_FLAGS.md)** - Feature flag system
-- **[MCP Tools](docs/mcp/MCP_TOOLS_IMPLEMENTATION.md)** - Tool implementation details
+See [MCP Tools Documentation](docs/mcp/MCP_TOOLS_IMPLEMENTATION.md) for detailed tool descriptions and parameters.
 
-### Development
+## 🐛 Troubleshooting
 
-- **[Coding Standards](docs/standards/README.md)** - Code quality guidelines
+### Tools Not Appearing
+
+1. **Restart your IDE completely** - MCP servers load on startup
+2. **Check MCP server status** - Look for errors in IDE logs
+3. **Verify configuration** - Ensure JSON syntax is correct
+4. **Check prerequisites** - Java 21+ and Node.js 18+ must be installed
+
+### Connection Issues
+
+**For Apify (SSE):**
+- Verify your internet connection
+- Check if Apify service is available
+- Ensure you're using the correct URL
+
+**For Local (STDIO):**
+- Verify Java is installed: `java -version`
+- Verify Node.js is installed: `node --version`
+- Try running manually: `npx -y @jakarta-migration/mcp-server`
+
+### Platform-Specific Issues
+
+**Windows:**
+- Use forward slashes in paths: `C:/path/to/file.jar`
+- Ensure Java is in your PATH
+
+**Mac/Linux:**
+- Ensure execute permissions: `chmod +x gradlew`
+- Use absolute paths in configuration
+
+## 📚 Documentation
+
+### For Users
+
+- **[MCP Setup Guide](docs/setup/MCP_SETUP.md)** - Detailed MCP configuration instructions
+- **[MCP Tools Reference](docs/mcp/MCP_TOOLS_IMPLEMENTATION.md)** - Complete tool documentation
+- **[Transport Configuration](docs/setup/MCP_TRANSPORT_CONFIGURATION.md)** - STDIO vs SSE explained
+
+### For Developers
+
+- **[Development Setup](docs/setup/INSTALLATION.md)** - Build and development environment
+- **[Architecture](docs/architecture/core-modules-design.md)** - System design and modules
 - **[Testing Guide](docs/testing/README.md)** - Testing standards and practices
-- **[Packaging Guide](docs/setup/PACKAGING.md)** - Build and release process
+- **[Contributing](CONTRIBUTING.md)** - How to contribute to the project
 
-## Development
+## 🔗 Resources
 
-### Running Tests
+- **Apify Store**: [jakartamigrationmcp](https://apify.com/adrian_m/jakartamigrationmcp)
+- **MCP Documentation**: [modelcontextprotocol.io](https://modelcontextprotocol.io)
+- **Spring AI**: [docs.spring.io/spring-ai](https://docs.spring.io/spring-ai/reference/)
+- **Jakarta EE**: [jakarta.ee](https://jakarta.ee/)
 
-```bash
-# All tests
-./gradlew test
+## 📄 License
 
-# Unit tests only
-./gradlew test --tests "*Test" --exclude-tests "*ComponentTest" --exclude-tests "*E2ETest"
+MIT License - See [LICENSE](LICENSE) file for details.
 
-# Component tests
-./gradlew test --tests "adrianmikula.jakartamigration.component.*"
+## 🙏 Acknowledgments
 
-# With coverage
-./gradlew test jacocoTestReport
-```
-
-### Building
-
-```bash
-# Build JAR
-./gradlew bootJar
-
-# Build for release
-./scripts/build-release.sh  # Linux/macOS
-.\scripts\build-release.ps1  # Windows
-```
-
-### Code Coverage
-
-Coverage reports are generated automatically after tests:
-
-- **HTML Report**: `build/reports/jacoco/test/html/index.html`
-- **XML Report**: `build/reports/jacoco/test/jacocoTestReport.xml`
-
-```bash
-# Generate coverage
-./gradlew jacocoTestReport
-
-# View coverage summary
-./gradlew jacocoCoverageSummary
-```
-
-## License & Monetization
-
-This project uses a hybrid licensing model:
-
-- **Community Tier** - Free, open-source version with basic features
-- **Premium Tier** - Advanced features (auto-fixes, one-click refactor, binary fixes)
-- **Enterprise Tier** - Priority support, cloud hosting, SLA guarantees
-
-License validation supports:
-- **Stripe** - Subscription-based licenses
-- **Apify** - Usage-based billing
-- **Test Keys** - For development and testing
-
-See [Monetization Research](docs/research/monetisation.md) for details.
-
-## Contributing
-
-Contributions are welcome! Please see the [Contributing Guide](CONTRIBUTING.md) for details.
-
-## License
-
-MIT
-
-## Resources
-
-- **MCP Documentation**: https://modelcontextprotocol.io
-- **Spring AI**: https://docs.spring.io/spring-ai/reference/
-- **OpenRewrite**: https://docs.openrewrite.org/
-- **Jakarta EE**: https://jakarta.ee/
+Built with ❤️ for the Java community. Special thanks to:
+- Spring AI team for MCP framework
+- OpenRewrite for migration recipes
+- Apify for hosting infrastructure
 
 ---
 
-**Built with ❤️ for the Java community**
+**Need help?** [Open an issue](https://github.com/your-repo/issues) or check our [documentation](docs/).
