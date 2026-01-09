@@ -44,7 +44,7 @@ class StripeWebhookControllerTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        controller = new StripeWebhookController(stripeProperties, localStorageService, objectMapper);
+        controller = new StripeWebhookController(stripeProperties, objectMapper);
         
         when(stripeProperties.getWebhookSecret()).thenReturn(webhookSecret);
         when(stripeProperties.getProductIdPremium()).thenReturn("prod_premium");

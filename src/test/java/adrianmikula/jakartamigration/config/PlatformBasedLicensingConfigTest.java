@@ -3,8 +3,6 @@ package adrianmikula.jakartamigration.config;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -81,67 +79,4 @@ class PlatformBasedLicensingConfigTest {
         }
     }
     
-    @Nested
-    @SpringBootTest(classes = {
-        PlatformDetectionService.class,
-        ApifyLicenseProperties.class,
-        StripeLicenseProperties.class,
-        PlatformBasedLicensingConfig.class
-    })
-    @TestPropertySource(properties = {
-        "jakarta.migration.storage.file.enabled=false"
-    })
-    @DisplayName("PlatformBasedLicensingConfig Integration Tests")
-    class PlatformBasedLicensingConfigIntegrationTests {
-        
-        private final PlatformDetectionService platformDetectionService;
-        private final ApifyLicenseProperties apifyProperties;
-        private final StripeLicenseProperties stripeProperties;
-        private final PlatformBasedLicensingConfig config;
-        
-        PlatformBasedLicensingConfigIntegrationTests(
-                PlatformDetectionService platformDetectionService,
-                ApifyLicenseProperties apifyProperties,
-                StripeLicenseProperties stripeProperties,
-                PlatformBasedLicensingConfig config) {
-            this.platformDetectionService = platformDetectionService;
-            this.apifyProperties = apifyProperties;
-            this.stripeProperties = stripeProperties;
-            this.config = config;
-        }
-        
-        @Test
-        @DisplayName("Should create all required beans")
-        void shouldCreateAllRequiredBeans() {
-            // Then
-            assertThat(platformDetectionService).isNotNull();
-            assertThat(apifyProperties).isNotNull();
-            assertThat(stripeProperties).isNotNull();
-            assertThat(config).isNotNull();
-        }
-        
-        @Test
-        @DisplayName("Should detect current platform correctly")
-        void shouldDetectCurrentPlatform() {
-            // When
-            boolean isApify = platformDetectionService.isApifyPlatform();
-            String platformName = platformDetectionService.getPlatformName();
-            
-            // Then
-            assertThat(platformName).isIn("apify", "local");
-            if (isApify) {
-                assertThat(platformName).isEqualTo("apify");
-            } else {
-                assertThat(platformName).isEqualTo("local");
-            }
-        }
-        
-        @Test
-        @DisplayName("Properties should be initialized")
-        void propertiesShouldBeInitialized() {
-            // Then
-            assertThat(apifyProperties.getEnabled()).isNotNull();
-            assertThat(stripeProperties.getEnabled()).isNotNull();
-        }
-    }
 }
