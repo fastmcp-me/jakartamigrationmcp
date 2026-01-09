@@ -1,6 +1,5 @@
 package adrianmikula.jakartamigration.config;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +14,13 @@ import org.springframework.context.annotation.Configuration;
  * 
  * This allows the same codebase to work correctly in both environments
  * without manual configuration.
+ * 
+ * NOTE: The actual auto-configuration is performed by {@link PlatformBasedLicensingPostProcessor},
+ * which runs as a BeanFactoryPostProcessor BEFORE bean definitions are evaluated.
+ * This ensures that @ConditionalOnProperty annotations see the correct property values.
+ * 
+ * This class is kept for backward compatibility and may be used for other
+ * platform-based configuration in the future.
  */
 @Slf4j
 @Configuration
@@ -26,55 +32,14 @@ public class PlatformBasedLicensingConfig {
     private final StripeLicenseProperties stripeProperties;
     
     /**
-     * Auto-configure licensing based on platform detection.
+     * Log the current licensing configuration.
      * 
-     * This runs after all properties are loaded but before beans are created,
-     * allowing us to modify the enabled flags before conditional beans are evaluated.
+     * This method can be called after application context is fully initialized
+     * to verify the configuration. The actual configuration is done by
+     * PlatformBasedLicensingPostProcessor before beans are created.
      */
-    @PostConstruct
-    public void configureLicensing() {
-        boolean isApify = platformDetectionService.isApifyPlatform();
-        
-        // Auto-enable Apify licensing on Apify platform
-        if (isApify) {
-            // Only enable if not explicitly disabled via environment variable
-            String apifyEnabledEnv = System.getenv("APIFY_VALIDATION_ENABLED");
-            if (apifyEnabledEnv == null || apifyEnabledEnv.isBlank()) {
-                apifyProperties.setEnabled(true);
-                log.info("Auto-enabled Apify licensing (detected Apify platform)");
-            } else {
-                log.info("Apify licensing configured via APIFY_VALIDATION_ENABLED={}", apifyEnabledEnv);
-            }
-            
-            // Disable Stripe on Apify platform (unless explicitly enabled)
-            String stripeEnabledEnv = System.getenv("STRIPE_VALIDATION_ENABLED");
-            if (stripeEnabledEnv == null || stripeEnabledEnv.isBlank()) {
-                stripeProperties.setEnabled(false);
-                log.info("Auto-disabled Stripe licensing (Apify platform detected)");
-            } else {
-                log.info("Stripe licensing configured via STRIPE_VALIDATION_ENABLED={}", stripeEnabledEnv);
-            }
-        } else {
-            // Auto-enable Stripe licensing for local/npm deployment
-            String stripeEnabledEnv = System.getenv("STRIPE_VALIDATION_ENABLED");
-            if (stripeEnabledEnv == null || stripeEnabledEnv.isBlank()) {
-                stripeProperties.setEnabled(true);
-                log.info("Auto-enabled Stripe licensing (local/npm deployment detected)");
-            } else {
-                log.info("Stripe licensing configured via STRIPE_VALIDATION_ENABLED={}", stripeEnabledEnv);
-            }
-            
-            // Disable Apify on local deployment (unless explicitly enabled)
-            String apifyEnabledEnv = System.getenv("APIFY_VALIDATION_ENABLED");
-            if (apifyEnabledEnv == null || apifyEnabledEnv.isBlank()) {
-                apifyProperties.setEnabled(false);
-                log.info("Auto-disabled Apify licensing (local deployment detected)");
-            } else {
-                log.info("Apify licensing configured via APIFY_VALIDATION_ENABLED={}", apifyEnabledEnv);
-            }
-        }
-        
-        log.info("Platform-based licensing configuration complete:");
+    public void logConfiguration() {
+        log.info("Platform-based licensing configuration status:");
         log.info("  Platform: {}", platformDetectionService.getPlatformName());
         log.info("  Apify enabled: {}", apifyProperties.getEnabled());
         log.info("  Stripe enabled: {}", stripeProperties.getEnabled());

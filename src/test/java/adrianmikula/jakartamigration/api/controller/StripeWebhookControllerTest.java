@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.util.HexFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -302,7 +302,8 @@ class StripeWebhookControllerTest {
         );
         mac.init(secretKey);
         byte[] hash = mac.doFinal(signedPayload.getBytes(StandardCharsets.UTF_8));
-        String signature = Base64.getEncoder().encodeToString(hash);
+        // Stripe uses hex encoding (not Base64) for webhook signatures
+        String signature = HexFormat.of().formatHex(hash);
 
         return "t=" + timestamp + ",v1=" + signature;
     }

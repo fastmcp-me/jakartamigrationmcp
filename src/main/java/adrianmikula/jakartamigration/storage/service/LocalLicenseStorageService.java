@@ -3,6 +3,7 @@ package adrianmikula.jakartamigration.storage.service;
 import adrianmikula.jakartamigration.config.FeatureFlagsProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,7 +38,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @ConditionalOnProperty(name = "jakarta.migration.storage.file.enabled", havingValue = "true", matchIfMissing = false)
 public class LocalLicenseStorageService {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Path storageFile;
     private static final long DEFAULT_CACHE_TTL_HOURS = 24;
@@ -60,6 +62,7 @@ public class LocalLicenseStorageService {
         }
 
         lock.readLock().lock();
+        boolean readLockHeld = true;
         try {
             Map<String, LicenseSession> sessions = loadSessions();
             LicenseSession session = sessions.get(email.toLowerCase());
@@ -73,17 +76,15 @@ public class LocalLicenseStorageService {
             if (session.getExpiresAt().isBefore(Instant.now())) {
                 log.debug("Local session expired for email: {}", maskEmail(email));
                 lock.readLock().unlock();
-                try {
-                    deleteSession(email);
-                } finally {
-                    // Already unlocked
-                }
+                readLockHeld = false;
+                deleteSession(email);
                 return null;
             }
 
             // Update last accessed time
             session.setLastAccessedAt(Instant.now());
             lock.readLock().unlock();
+            readLockHeld = false;
             saveSession(session);
 
             try {
@@ -95,6 +96,11 @@ public class LocalLicenseStorageService {
         } catch (Exception e) {
             log.error("Error retrieving license session by email: {}", e.getMessage(), e);
             return null;
+        } finally {
+            // Ensure read lock is always released
+            if (readLockHeld) {
+                lock.readLock().unlock();
+            }
         }
     }
 
@@ -110,6 +116,7 @@ public class LocalLicenseStorageService {
         }
 
         lock.readLock().lock();
+        boolean readLockHeld = true;
         try {
             Map<String, LicenseSession> sessions = loadSessions();
             
@@ -128,17 +135,15 @@ public class LocalLicenseStorageService {
             if (session.getExpiresAt().isBefore(Instant.now())) {
                 log.debug("Local session expired for license key: {}", maskKey(licenseKey));
                 lock.readLock().unlock();
-                try {
-                    deleteSession(session.getEmail());
-                } finally {
-                    // Already unlocked
-                }
+                readLockHeld = false;
+                deleteSession(session.getEmail());
                 return null;
             }
 
             // Update last accessed time
             session.setLastAccessedAt(Instant.now());
             lock.readLock().unlock();
+            readLockHeld = false;
             saveSession(session);
 
             try {
@@ -150,6 +155,11 @@ public class LocalLicenseStorageService {
         } catch (Exception e) {
             log.error("Error retrieving license session by license key: {}", e.getMessage(), e);
             return null;
+        } finally {
+            // Ensure read lock is always released
+            if (readLockHeld) {
+                lock.readLock().unlock();
+            }
         }
     }
 
