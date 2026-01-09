@@ -1,7 +1,9 @@
 package adrianmikula.jakartamigration.config;
 
+import adrianmikula.jakartamigration.api.service.StripePaymentLinkService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.EnumSet;
@@ -32,6 +34,8 @@ public class FeatureFlagsService {
 
     private final FeatureFlagsProperties properties;
     private final LicenseService licenseService;
+    @Nullable
+    private final StripePaymentLinkService paymentLinkService;
 
     /**
      * Check if a feature flag is enabled.
@@ -140,32 +144,113 @@ public class FeatureFlagsService {
 
     /**
      * Get upgrade message for a feature that requires a higher tier.
+     * Includes payment link if available.
      * 
      * @param flag The feature flag
      * @return Upgrade message with purchase link
      */
     public String getUpgradeMessage(FeatureFlag flag) {
-        return String.format(
-            "The '%s' feature requires a %s license. " +
-            "To unlock this feature, please upgrade at: %s",
+        FeatureFlagsProperties.LicenseTier currentTier = getCurrentTier();
+        String paymentLink = getPaymentLinkForTier(flag.getRequiredTier());
+        
+        StringBuilder message = new StringBuilder();
+        message.append(String.format(
+            "The '%s' feature requires a %s license, but your current tier is %s.",
             flag.getName(),
             flag.getRequiredTier(),
-            getPurchaseUrl()
+            currentTier
+        ));
+        
+        if (paymentLink != null && !paymentLink.isBlank()) {
+            message.append(String.format(
+                " To unlock this feature, please upgrade at: %s",
+                paymentLink
+            ));
+        } else {
+            message.append(" Please configure a payment link or contact support to upgrade.");
+        }
+        
+        return message.toString();
+    }
+
+    /**
+     * Get upgrade information as a structured object for JSON responses.
+     * 
+     * @param flag The feature flag
+     * @return Upgrade information with payment link
+     */
+    public UpgradeInfo getUpgradeInfo(FeatureFlag flag) {
+        FeatureFlagsProperties.LicenseTier currentTier = getCurrentTier();
+        String paymentLink = getPaymentLinkForTier(flag.getRequiredTier());
+        
+        return new UpgradeInfo(
+            flag.getName(),
+            flag.getDescription(),
+            currentTier,
+            flag.getRequiredTier(),
+            paymentLink,
+            getUpgradeMessage(flag)
         );
     }
 
     /**
-     * Get the purchase URL for upgrading.
-     * Can be configured via environment variable or properties.
+     * Get payment link for a specific tier.
      * 
-     * @return Purchase URL
+     * @param tier The license tier
+     * @return Payment link URL, or null if not configured
      */
-    private String getPurchaseUrl() {
-        // TODO: Configure via properties or environment variable
-        return System.getenv().getOrDefault(
-            "JAKARTA_MCP_PURCHASE_URL",
-            "https://buy.stripe.com/your-link-here"
-        );
+    private String getPaymentLinkForTier(FeatureFlagsProperties.LicenseTier tier) {
+        if (paymentLinkService == null) {
+            return null;
+        }
+        
+        // Map tier to product name
+        String productName = switch (tier) {
+            case PREMIUM -> "premium";
+            case ENTERPRISE -> "enterprise";
+            case COMMUNITY -> null; // No payment link for community
+        };
+        
+        if (productName == null) {
+            return null;
+        }
+        
+        return paymentLinkService.getPaymentLink(productName);
+    }
+
+    /**
+     * Upgrade information data class.
+     */
+    public static class UpgradeInfo {
+        private final String featureName;
+        private final String featureDescription;
+        private final FeatureFlagsProperties.LicenseTier currentTier;
+        private final FeatureFlagsProperties.LicenseTier requiredTier;
+        private final String paymentLink;
+        private final String message;
+
+        public UpgradeInfo(
+            String featureName,
+            String featureDescription,
+            FeatureFlagsProperties.LicenseTier currentTier,
+            FeatureFlagsProperties.LicenseTier requiredTier,
+            String paymentLink,
+            String message
+        ) {
+            this.featureName = featureName;
+            this.featureDescription = featureDescription;
+            this.currentTier = currentTier;
+            this.requiredTier = requiredTier;
+            this.paymentLink = paymentLink;
+            this.message = message;
+        }
+
+        public String getFeatureName() { return featureName; }
+        public String getFeatureDescription() { return featureDescription; }
+        public FeatureFlagsProperties.LicenseTier getCurrentTier() { return currentTier; }
+        public FeatureFlagsProperties.LicenseTier getRequiredTier() { return requiredTier; }
+        public String getPaymentLink() { return paymentLink; }
+        public String getMessage() { return message; }
     }
 
     /**

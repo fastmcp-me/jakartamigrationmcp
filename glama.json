@@ -2,6 +2,31 @@
   "$schema": "https://glama.ai/mcp/schemas/server.json",
   "maintainers": [
     "adrianmikula"
-  ]
+  ],
+  "mcp": {
+    "url": "https://jakartamigrationmcp-production.up.railway.app/mcp/streamable-http",
+    "transport": "streamable-http"
+  },
+  "description": "Jakarta EE migration analysis and automation tools. Analyze Java projects for Jakarta EE migration readiness, detect blockers, recommend versions, create migration plans, and verify runtime execution.",
+  "tags": [
+    "java",
+    "jakarta",
+    "migration",
+    "enterprise",
+    "spring-boot",
+    "javax"
+  ],
+  "pricing": {
+    "free": {
+      "description": "Basic analysis tools (analyzeJakartaReadiness, detectBlockers, recommendVersions)"
+    },
+    "premium": {
+      "price": "$29/month",
+      "description": "Full migration suite including createMigrationPlan, analyzeMigrationImpact, verifyRuntime"
+    },
+    "enterprise": {
+      "price": "$299/month",
+      "description": "Custom support, on-premise deployment, SLA"
+    }
+  }
 }
-

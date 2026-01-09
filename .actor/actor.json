@@ -11,7 +11,7 @@
     "dataset": "./dataset_schema.json"
   },
   "usesStandbyMode": true,
-  "webServerMcpPath": "/mcp/sse",
+  "webServerMcpPath": "/mcp/streamable-http",
   "defaultRunOptions": {
     "memory": 2048
   }

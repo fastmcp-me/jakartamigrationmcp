@@ -150,6 +150,7 @@ public class McpStreamableHttpController {
                 Map<String, Object> inputSchema = new HashMap<>();
                 inputSchema.put("type", "object");
                 Map<String, Object> properties = new HashMap<>();
+                List<String> required = new ArrayList<>();
                 
                 for (int i = 0; i < method.getParameterCount(); i++) {
                     java.lang.reflect.Parameter param = method.getParameters()[i];
@@ -161,10 +162,18 @@ public class McpStreamableHttpController {
                         prop.put("type", getJsonType(param.getType()));
                         prop.put("description", paramAnnotation.description());
                         properties.put(param.getName(), prop);
+                        
+                        // Add to required list if parameter is required
+                        if (paramAnnotation.required()) {
+                            required.add(param.getName());
+                        }
                     }
                 }
                 
                 inputSchema.put("properties", properties);
+                if (!required.isEmpty()) {
+                    inputSchema.put("required", required);
+                }
                 toolMap.put("inputSchema", inputSchema);
                 
                 tools.add(toolMap);

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "jakarta-migration-local": {
+      "type": "streamable-http",
+      "url": "http://localhost:8080/mcp/streamable-http"
+    }
+  }
+}
+
