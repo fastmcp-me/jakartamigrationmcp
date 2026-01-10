@@ -3,7 +3,6 @@ package adrianmikula.jakartamigration.coderefactoring.service;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -139,7 +138,7 @@ public class ToolDownloader {
         log.info("Downloading {} bytes...", contentLength > 0 ? contentLength : "unknown size");
         
         try (InputStream inputStream = new BufferedInputStream(connection.getInputStream());
-             FileOutputStream outputStream = new FileOutputStream(destination.toFile())) {
+             java.io.OutputStream outputStream = Files.newOutputStream(destination)) {
             
             byte[] buffer = new byte[8192];
             long totalBytesRead = 0;

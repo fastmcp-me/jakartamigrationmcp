@@ -14,9 +14,10 @@ public class RecipeLibrary {
     
     public RecipeLibrary() {
         // Register default Jakarta migration recipes
-        registerRecipe(Recipe.jakartaNamespaceRecipe());
-        registerRecipe(Recipe.persistenceXmlRecipe());
-        registerRecipe(Recipe.webXmlRecipe());
+        // Use private method to avoid calling overridable method in constructor
+        registerRecipeInternal(Recipe.jakartaNamespaceRecipe());
+        registerRecipeInternal(Recipe.persistenceXmlRecipe());
+        registerRecipeInternal(Recipe.webXmlRecipe());
     }
     
     /**
@@ -40,7 +41,14 @@ public class RecipeLibrary {
     /**
      * Registers a new recipe.
      */
-    public void registerRecipe(Recipe recipe) {
+    public final void registerRecipe(Recipe recipe) {
+        registerRecipeInternal(recipe);
+    }
+    
+    /**
+     * Internal method to register a recipe (not overridable).
+     */
+    private void registerRecipeInternal(Recipe recipe) {
         if (recipe == null) {
             throw new IllegalArgumentException("Recipe cannot be null");
         }

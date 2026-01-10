@@ -2,6 +2,7 @@ package adrianmikula.jakartamigration.runtimeverification.service.impl;
 
 import adrianmikula.jakartamigration.runtimeverification.domain.*;
 import adrianmikula.jakartamigration.runtimeverification.service.BytecodeAnalyzer;
+import adrianmikula.jakartamigration.runtimeverification.service.BytecodeAnalysisException;
 import org.objectweb.asm.*;
 
 import java.io.IOException;
@@ -64,7 +65,7 @@ public class AsmBytecodeAnalyzer implements BytecodeAnalyzer {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read JAR file: " + jarPath, e);
+            throw new BytecodeAnalysisException("Failed to read JAR file: " + jarPath, e);
         }
         
         // Check for mixed namespace issues
@@ -120,7 +121,7 @@ public class AsmBytecodeAnalyzer implements BytecodeAnalyzer {
                      }
                  });
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read classes directory: " + classesDirectory, e);
+            throw new BytecodeAnalysisException("Failed to read classes directory: " + classesDirectory, e);
         }
         
         // Check for mixed namespace issues

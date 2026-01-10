@@ -367,13 +367,13 @@ public class McpSseController {
             // Tool not found - return error response instead of throwing
             log.warn("Tool not found: " + toolName);
             throw e; // Let processMcpRequest handle it as a JSON-RPC error
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException e) {
             log.error("Error executing tool: " + toolName, e);
-            throw new RuntimeException("Tool execution failed: " + e.getMessage(), e);
+            throw new McpToolExecutionException("Tool execution failed: " + e.getMessage(), e);
         }
     }
     
-    private String executeTool(String toolName, Map<String, Object> arguments) throws Exception {
+    private String executeTool(String toolName, Map<String, Object> arguments) throws IllegalArgumentException, ReflectiveOperationException {
         // Try JakartaMigrationTools first
         for (Method method : jakartaMigrationTools.getClass().getDeclaredMethods()) {
             org.springaicommunity.mcp.annotation.McpTool annotation = 
@@ -397,7 +397,7 @@ public class McpSseController {
         throw new IllegalArgumentException("Tool not found: " + toolName);
     }
     
-    private String invokeTool(Method method, Object instance, Map<String, Object> arguments) throws Exception {
+    private String invokeTool(Method method, Object instance, Map<String, Object> arguments) throws ReflectiveOperationException, IllegalArgumentException {
         Object[] params = new Object[method.getParameterCount()];
         java.lang.reflect.Parameter[] methodParams = method.getParameters();
         

@@ -97,8 +97,11 @@ public class SourceCodeScannerImpl implements SourceCodeScanner {
     
     @Override
     public FileUsage scanFile(Path filePath) {
-        if (filePath == null || !Files.exists(filePath)) {
-            log.warn("Invalid file path: {}", filePath);
+        if (filePath == null) {
+            throw new IllegalArgumentException("filePath cannot be null");
+        }
+        if (!Files.exists(filePath)) {
+            log.warn("File does not exist: {}", filePath);
             return new FileUsage(filePath, List.of(), 0);
         }
         
