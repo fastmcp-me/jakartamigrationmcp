@@ -44,15 +44,9 @@ jobs:
       - name: Run OWASP dependency check (non-blocking)
         run: ./gradlew dependencyCheckAnalyze --no-daemon
         continue-on-error: true
-        # Optional: Uncomment to set NVD API key (get free key from https://nvd.nist.gov/developers/request-an-api-key)
-        # env:
-        #   DC_NVD_API_KEY: ${{ secrets.DC_NVD_API_KEY }}
         
       - name: Verify code quality (fail on high-priority bugs)
         run: ./gradlew codeQualityVerify --no-daemon
-        # Optional: Uncomment to set NVD API key (get free key from https://nvd.nist.gov/developers/request-an-api-key)
-        # env:
-        #   DC_NVD_API_KEY: ${{ secrets.DC_NVD_API_KEY }}
         
       - name: Upload test results
         if: always()
