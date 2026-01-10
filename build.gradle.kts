@@ -409,10 +409,10 @@ spotbugs {
     effort.set(com.github.spotbugs.snom.Effort.MAX)
     reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
     excludeFilter.set(file("config/spotbugs/exclude.xml"))
+    ignoreFailures.set(true) // Don't fail on bugs - we'll verify manually via spotbugsVerify
 }
 
 tasks.named<com.github.spotbugs.snom.SpotBugsTask>("spotbugsMain") {
-    isIgnoreFailures = true // Don't fail on bugs - we'll verify manually via spotbugsVerify
     reports {
         create("html") {
             required.set(true)
