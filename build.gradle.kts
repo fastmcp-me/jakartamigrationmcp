@@ -678,10 +678,9 @@ tasks.register("codeQualityVerify") {
     )
 }
 
-// Make code quality verification run after tests
-tasks.named("check") {
-    dependsOn(tasks.named("codeQualityVerify"))
-}
+// Note: Code quality checks are NOT part of the default build/check lifecycle
+// Run them explicitly with: ./gradlew codeQualityCheck or ./gradlew codeQualityVerify
+// CI pipeline runs codeQualityVerify explicitly
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("${project.name}-${project.version}.jar")

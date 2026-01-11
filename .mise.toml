@@ -111,6 +111,11 @@ description = "Clean build artifacts"
 run_windows = "powershell -File scripts/gradle-clean.ps1"
 run = "bash -c 'if [ -f gradlew ]; then ./gradlew clean; else gradle clean; fi'"
 
+[tasks.code-quality]
+description = "Run all code quality checks and verify (fails on high-priority bugs)"
+run_windows = "powershell -File scripts/gradle-code-quality.ps1"
+run = "bash scripts/gradle-code-quality.sh"
+
 [tasks.docker-logs]
 description = "View Docker service logs (follow mode)"
 run = "docker compose logs -f"
